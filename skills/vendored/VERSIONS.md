@@ -14,11 +14,16 @@
 ```
 
 The script clones the upstream repo (MIT licensed), copies exactly the five
-skills above into this directory, and rewrites the Commit/Date lines here.
-Do **not** vendor the full skill set — it pollutes skill triggering. The
-orchestrator invokes these five explicitly.
+skills above into this directory, rewrites the Commit/Date lines here, and
+**automatically re-applies the description de-emphasis** (below). Do **not**
+vendor the full skill set — it pollutes skill triggering. The orchestrator
+invokes these five explicitly.
 
-After vendoring, de-emphasize each vendored SKILL.md description if needed so
-it doesn't auto-fire on unrelated tasks (e.g. prefix with "Internal writing
-aid for shopify-apps-doc-writer; invoked explicitly by its orchestrator.") and
-record that change under "Local modifications".
+These skills are committed and ship with the plugin — running the script is a
+**maintenance step** (re-pinning to newer upstream), not part of install.
+
+The de-emphasis prefixes each `description:` with "Internal writing aid for
+shopify-apps-doc-writer; invoked explicitly by its orchestrator, not
+auto-triggered." so the broad upstream wording can't auto-fire on unrelated
+tasks. The script applies it idempotently, so a re-pin never regresses it — no
+manual step required.

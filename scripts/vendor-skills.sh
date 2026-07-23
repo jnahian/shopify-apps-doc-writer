@@ -36,6 +36,23 @@ for skill in "${SKILLS[@]}"; do
   echo "  vendored $skill"
 done
 
+# De-emphasize each description so the broad upstream wording ("when the user
+# wants to write marketing copy") can't auto-fire on unrelated tasks. The
+# orchestrator invokes these explicitly, so they must NOT trigger on their own.
+# Applied here (not left as a manual reminder) so a re-pin never regresses it.
+PREFIX="Internal writing aid for shopify-apps-doc-writer; invoked explicitly by its orchestrator, not auto-triggered. "
+for skill in "${SKILLS[@]}"; do
+  node -e '
+    const fs = require("fs"), p = process.argv[1], prefix = process.argv[2];
+    let s = fs.readFileSync(p, "utf8");
+    if (s.includes(prefix)) process.exit(0);              // already de-emphasized
+    const out = s.replace(/^description:\s*("?)/m, (m, q) => `description: ${q}${prefix}`);
+    if (out === s) { console.error(`WARN: no description line in ${p}`); process.exit(0); }
+    fs.writeFileSync(p, out);
+  ' "$DEST/$skill/SKILL.md" "$PREFIX"
+done
+echo "  de-emphasized all vendored SKILL.md descriptions"
+
 today="$(date +%Y-%m-%d)"
 sed -i.bak \
   -e "s|^- Commit: .*|- Commit: $sha|" \
@@ -44,4 +61,3 @@ sed -i.bak \
 rm -f "$DEST/VERSIONS.md.bak"
 
 echo "Done. Pinned $sha ($today) in skills/vendored/VERSIONS.md."
-echo "Review the vendored SKILL.md descriptions and de-emphasize them if they could auto-fire on unrelated tasks."

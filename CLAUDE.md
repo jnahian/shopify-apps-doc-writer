@@ -12,7 +12,10 @@ A **Claude Code plugin** (`shopify-apps-doc-writer`), not an application. Most o
 
 ```bash
 npm install                        # auto-runs on first session via hooks/ensure-deps.js
-./scripts/vendor-skills.sh [sha]   # pulls 5 writing skills into skills/vendored/, rewrites VERSIONS.md
+./scripts/vendor-skills.sh [sha]   # MAINTENANCE ONLY: re-pin skills/vendored/ to newer upstream.
+                                   # The 5 skills are committed and ship with the plugin — this is
+                                   # not an install step, and it OVERWRITES the description
+                                   # de-emphasis (re-apply it afterward, see vendored/VERSIONS.md).
 
 node scripts/setup-auth.js --app <key> [--store x.myshopify.com] [--handle <app-handle>]
 node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--headed]
