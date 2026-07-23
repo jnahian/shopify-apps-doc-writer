@@ -1,10 +1,10 @@
 # Vendored from coreyhaines31/marketingskills
 
 - Upstream: https://github.com/coreyhaines31/marketingskills
-- Commit: _not yet vendored — run `scripts/vendor-skills.sh`_
-- Date: _not yet vendored_
+- Commit: c21a984a56da10fb6085e6334f6f60929220a4da
+- Date: 2026-07-23
 - Skills: product-marketing, copywriting, copy-editing, ai-seo, content-strategy
-- Local modifications: (list any, ideally none)
+- Local modifications: each SKILL.md `description:` is prefixed with "Internal writing aid for shopify-feature-docs; invoked explicitly by its orchestrator, not auto-triggered." Upstream descriptions are broad ("when the user wants to write marketing copy") and would auto-fire on unrelated tasks. Content is otherwise unmodified.
 
 ## How to vendor / update
 
