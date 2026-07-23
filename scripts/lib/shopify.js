@@ -53,13 +53,22 @@ function isAdminUrl(url) {
  * Returns a Playwright locator for the first visible match, or null after
  * the timeout. Polls both frames so manifest authors don't have to care
  * which frame an element lives in.
+ *
+ * Filters to visible matches *before* taking .first() — responsive Polaris
+ * layouts render duplicate controls (one desktop, one mobile) and the hidden
+ * one is often first in the DOM. Matching .first() and then testing
+ * visibility would poll the hidden twin until timeout.
  */
 async function findInPageOrIframe(page, selector, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const onPage = page.locator(selector).first();
+    const onPage = page.locator(selector).locator('visible=true').first();
     if (await onPage.isVisible().catch(() => false)) return onPage;
-    const inFrame = page.frameLocator(APP_IFRAME_SELECTOR).locator(selector).first();
+    const inFrame = page
+      .frameLocator(APP_IFRAME_SELECTOR)
+      .locator(selector)
+      .locator('visible=true')
+      .first();
     if (await inFrame.isVisible().catch(() => false)) return inFrame;
     if (Date.now() >= deadline) return null;
     await page.waitForTimeout(250);
