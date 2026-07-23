@@ -30,10 +30,12 @@ const EXIT_SELECTOR = 20;
 
 /** Re-shoot by invoking capture.js so it remains the only screenshotter. */
 function realCapture({ manifestPath, appKey, outDir }) {
+  // capture.js prints progress to stdout via console.log; we need clean JSON on our stdout,
+  // so route its stdout+stderr to our stderr (fd 2), keeping the contract intact.
   const res = spawnSync(
-    'node',
+    process.execPath,
     [path.join(__dirname, 'capture.js'), '--manifest', manifestPath, '--app', appKey, '--out-dir', outDir],
-    { stdio: 'inherit' }
+    { stdio: ['ignore', 2, 2] }
   );
   if (res.status === EXIT_AUTH) {
     const e = new Error('Session expired — run /docs-setup auth, then re-run.');
@@ -71,6 +73,7 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory }) {
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const shotIds = manifest.shots.map((s) => s.id);
+  // ponytail: temp dirs intentionally not cleaned up here; caller owns tmpDir cleanup.
   const makeTmp = tmpFactory || (() => fs.mkdtempSync(path.join(os.tmpdir(), 'update-')));
   const tmpDir = makeTmp();
 
