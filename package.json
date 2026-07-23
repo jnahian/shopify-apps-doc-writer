@@ -1,0 +1,16 @@
+{
+  "name": "shopify-feature-docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Code plugin: merchant-facing feature docs for embedded Shopify apps with real, reproducible screenshots.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "setup-auth": "node scripts/setup-auth.js",
+    "capture": "node scripts/capture.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}
