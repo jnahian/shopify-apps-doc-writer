@@ -1,5 +1,5 @@
 {
-  "name": "shopify-feature-docs",
+  "name": "shopify-apps-doc-writer",
   "version": "0.1.0",
   "description": "Write merchant-facing feature documentation for embedded Shopify apps, with real, reproducible screenshots captured via Playwright. Canonical output is local markdown + assets; optionally publish to Google Docs or any connected MCP.",
   "author": {

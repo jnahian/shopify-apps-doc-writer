@@ -1,9 +1,9 @@
 ---
-name: shopify-feature-docs
+name: shopify-apps-doc-writer
 description: Write merchant-facing feature documentation for a Shopify app with real screenshots. Use whenever the user wants to document a feature, write a help article, user guide, how-to, or knowledge-base entry for the app, update feature docs after a release, or mentions /write-docs — even if they don't say "documentation" explicitly.
 ---
 
-# shopify-feature-docs — Orchestrator
+# shopify-apps-doc-writer — Orchestrator
 
 Produce a complete merchant-facing feature doc: prose + real, consistent screenshots, captured deterministically from a shot manifest. Canonical output is **always** local markdown + assets in `docs/<feature-slug>/`; publishing is an optional projection of it.
 
@@ -17,8 +17,8 @@ Produce a complete merchant-facing feature doc: prose + real, consistent screens
 
 ## 0. Preflight
 
-1. Resolve the app config: `~/.config/shopify-feature-docs/<app-key>.json`. Honor `--app <key>`; with no flag, use the single config if exactly one exists, otherwise ask. **If no config exists, stop** and tell the user to run `/docs-setup` first.
-2. Read product context if present: `.agents/product-marketing.md` in the repo, else `~/.config/shopify-feature-docs/<app-key>.product-marketing.md`. If missing, warn once ("docs will lack shared positioning/tone grounding — `/docs-setup context` fixes this") and proceed.
+1. Resolve the app config: `~/.config/shopify-apps-doc-writer/<app-key>.json`. Honor `--app <key>`; with no flag, use the single config if exactly one exists, otherwise ask. **If no config exists, stop** and tell the user to run `/docs-setup` first.
+2. Read product context if present: `.agents/product-marketing.md` in the repo, else `~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`. If missing, warn once ("docs will lack shared positioning/tone grounding — `/docs-setup context` fixes this") and proceed.
 3. If ambiguous, ask (one round, concrete options): **audience** (merchant-facing vs internal) and **doc type** (new doc vs rewrite of an existing one). Default: merchant-facing, new.
 4. Derive `<feature-slug>` (kebab-case). If `docs/<slug>/` already exists and this isn't a rewrite, ask before overwriting.
 

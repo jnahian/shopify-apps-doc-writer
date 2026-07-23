@@ -1,7 +1,7 @@
 # Dependencies
 node_modules/
 
-# Never commit auth state or per-user config (lives in ~/.config/shopify-feature-docs/, but belt-and-braces)
+# Never commit auth state or per-user config (lives in ~/.config/shopify-apps-doc-writer/, but belt-and-braces)
 *.auth.json
 *.storage-state.json
 

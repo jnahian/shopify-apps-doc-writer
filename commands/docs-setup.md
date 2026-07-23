@@ -1,15 +1,15 @@
 ---
-description: Set up shopify-feature-docs — auth, publish target, and product context (resumable, phased)
+description: Set up shopify-apps-doc-writer — auth, publish target, and product context (resumable, phased)
 argument-hint: "[auth|publish|context] [--app <key>]"
 ---
 
-Run the shopify-feature-docs setup wizard. Argument given: **$ARGUMENTS**
+Run the shopify-apps-doc-writer setup wizard. Argument given: **$ARGUMENTS**
 
 - No phase argument → run all three phases in order.
 - `auth`, `publish`, or `context` → run only that phase.
 - Each phase writes config incrementally as soon as it completes, so partial setup is never lost. If config already exists for a phase, show current values and ask whether to keep or redo them.
 
-Config lives at `~/.config/shopify-feature-docs/<app-key>.json` (per-user, never committed to the repo). Auth state lives at `~/.config/shopify-feature-docs/<app-key>.auth.json`. Multiple apps = multiple config files; `--app <key>` selects one, and with no flag: use the single existing config if there is exactly one, otherwise ask.
+Config lives at `~/.config/shopify-apps-doc-writer/<app-key>.json` (per-user, never committed to the repo). Auth state lives at `~/.config/shopify-apps-doc-writer/<app-key>.auth.json`. Multiple apps = multiple config files; `--app <key>` selects one, and with no flag: use the single existing config if there is exactly one, otherwise ask.
 
 ## Phase 1 — Capture (auth)
 
@@ -39,7 +39,7 @@ Note for later: whenever `scripts/capture.js` exits with code **10** (auth expir
 2. If accepted, draft it from: the app's landing page, its Shopify App Store listing, and a short interview with the user (target customer, top 3 value props, words/claims to avoid). Show the draft; iterate until they approve.
 3. Ask where to save it:
    - **Repo** (`.agents/product-marketing.md`) — shared team truth. **Default.**
-   - Personal (`~/.config/shopify-feature-docs/<app-key>.product-marketing.md`) — if they'd rather not commit it.
+   - Personal (`~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`) — if they'd rather not commit it.
 4. This phase is skippable. If skipped, `/write-docs` will warn that product context is missing but proceed anyway.
 
 ## Wrap-up

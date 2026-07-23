@@ -3,11 +3,11 @@ description: Write a merchant-facing feature doc with real screenshots for a Sho
 argument-hint: <feature> [--app <key>]
 ---
 
-Invoke the `shopify-feature-docs` skill and follow it end to end for the feature the user named: **$ARGUMENTS**
+Invoke the `shopify-apps-doc-writer` skill and follow it end to end for the feature the user named: **$ARGUMENTS**
 
 Rules of engagement (the skill has the full detail — these are the non-negotiables):
 
-1. **Preflight first.** Load per-user config from `~/.config/shopify-feature-docs/`. If no config exists, stop and point the user to `/docs-setup`. If `--app <key>` was passed, use that config; if exactly one config exists, use it; otherwise ask which app.
+1. **Preflight first.** Load per-user config from `~/.config/shopify-apps-doc-writer/`. If no config exists, stop and point the user to `/docs-setup`. If `--app <key>` was passed, use that config; if exactly one config exists, use it; otherwise ask which app.
 2. **Three hard gates, none skippable, none auto-approvable:**
    - Gate 1: user approves the shot manifest before any capture runs.
    - Gate 2: user approves the full draft doc before anything leaves the local repo.

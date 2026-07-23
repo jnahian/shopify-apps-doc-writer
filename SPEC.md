@@ -1,4 +1,4 @@
-# shopify-feature-docs — Plugin Specification
+# shopify-apps-doc-writer — Plugin Specification
 
 A Claude Code plugin that writes merchant-facing feature documentation for embedded Shopify apps, capturing real screenshots via Playwright and publishing to a user-configured destination (local markdown, Google Docs, or any connected MCP).
 
@@ -62,7 +62,7 @@ A Claude Code plugin that writes merchant-facing feature documentation for embed
 ## 3. Directory Structure
 
 ```
-shopify-feature-docs/
+shopify-apps-doc-writer/
 ├── .claude-plugin/
 │   └── plugin.json                  # name, version, description, author
 ├── commands/
@@ -70,7 +70,7 @@ shopify-feature-docs/
 │   ├── write-docs.md                # main workflow entry point
 │   └── update-docs.md               # v2 stub — prints "coming soon" + pointer to manifest re-run
 ├── skills/
-│   ├── shopify-feature-docs/
+│   ├── shopify-apps-doc-writer/
 │   │   ├── SKILL.md                 # orchestrator (see §7)
 │   │   └── references/
 │   │       ├── doc-template.md      # canonical feature-doc structure
@@ -112,8 +112,8 @@ Do **not** vendor the full 47-skill set — pollutes triggering. The orchestrato
 
 ### Location & scoping
 - **All config is per-user and gitignored.** Nothing config-related is committed to the app repo.
-- Path: `~/.config/shopify-feature-docs/<app-key>.json` (e.g. `storeseo.json`).
-- Auth state: `~/.config/shopify-feature-docs/<app-key>.auth.json` (Playwright storageState). Never in repo, never in output dirs.
+- Path: `~/.config/shopify-apps-doc-writer/<app-key>.json` (e.g. `storeseo.json`).
+- Auth state: `~/.config/shopify-apps-doc-writer/<app-key>.auth.json` (Playwright storageState). Never in repo, never in output dirs.
 - Team consistency comes from the plugin (SKILL.md conventions, doc template, viewport default), not from shared config.
 - **Exception under discussion:** `product-marketing.md` is team-shared truth. Setup asks: "save to repo (`.agents/product-marketing.md`) or keep personal?" Default: repo.
 
@@ -124,7 +124,7 @@ Do **not** vendor the full 47-skill set — pollutes triggering. The orchestrato
   "appKey": "storeseo",
   "store": "storeseo-dev.myshopify.com",
   "appHandle": "storeseo",
-  "storageState": "~/.config/shopify-feature-docs/storeseo.auth.json",
+  "storageState": "~/.config/shopify-apps-doc-writer/storeseo.auth.json",
   "viewport": { "width": 1440, "height": 900 },
   "locale": "en",
   "capture": {

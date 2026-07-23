@@ -59,7 +59,7 @@ const CHROME_PATHS = {
 
 // Dedicated profile: Chrome 136+ refuses --remote-debugging-port on the
 // default profile, and this keeps our session out of the user's own Chrome.
-const PROFILE_DIR = path.join(os.homedir(), '.claude-browser-profiles', 'shopify-feature-docs-chrome');
+const PROFILE_DIR = path.join(os.homedir(), '.claude-browser-profiles', 'shopify-apps-doc-writer-chrome');
 
 function findChrome() {
   for (const candidate of CHROME_PATHS[process.platform] || []) {

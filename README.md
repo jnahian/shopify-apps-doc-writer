@@ -1,4 +1,4 @@
-# shopify-feature-docs
+# shopify-apps-doc-writer
 
 A Claude Code plugin that writes **merchant-facing feature documentation** for embedded Shopify apps — real prose plus real, reproducible screenshots captured via Playwright — and optionally publishes it to Google Docs or any connected MCP destination.
 
@@ -49,8 +49,8 @@ Then in Claude Code, run `/docs-setup`. Requires Node ≥ 20.
 
 All config is **per-user and gitignored** — nothing config-related is committed to the app repo:
 
-- `~/.config/shopify-feature-docs/<app-key>.json` — store, app handle, viewport, capture + publish settings
-- `~/.config/shopify-feature-docs/<app-key>.auth.json` — Playwright storageState (your login session; never in the repo)
+- `~/.config/shopify-apps-doc-writer/<app-key>.json` — store, app handle, viewport, capture + publish settings
+- `~/.config/shopify-apps-doc-writer/<app-key>.auth.json` — Playwright storageState (your login session; never in the repo)
 
 Team consistency comes from the plugin itself (SKILL.md conventions, doc template, viewport default), not shared config. The one team-shared artifact is `product-marketing.md` (positioning/tone foundation), which setup offers to save to the repo at `.agents/product-marketing.md`.
 
@@ -61,7 +61,7 @@ Multiple apps = multiple config files; commands accept `--app <key>`.
 ```
 .claude-plugin/plugin.json           plugin manifest
 commands/                            /docs-setup · /write-docs · /update-docs (stub)
-skills/shopify-feature-docs/         orchestrator SKILL.md + references/
+skills/shopify-apps-doc-writer/         orchestrator SKILL.md + references/
   references/doc-template.md           canonical doc structure
   references/manifest-schema.md        shot manifest schema + selector policy
   references/publish-targets.md        local · google-docs · generic mcp

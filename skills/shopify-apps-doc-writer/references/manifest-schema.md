@@ -15,7 +15,7 @@ The shot manifest is the contract between adaptive discovery and deterministic c
 
 | Field | Required | Meaning |
 |---|---|---|
-| `app` | yes | App key — must match a config file (`~/.config/shopify-feature-docs/<app>.json`) |
+| `app` | yes | App key — must match a config file (`~/.config/shopify-apps-doc-writer/<app>.json`) |
 | `feature` | yes | Feature slug — must match the containing `docs/<slug>/` directory |
 | `viewport` | no | Overrides the config viewport for this manifest (default 1440×900) |
 | `shots` | yes | Ordered array of shot objects |

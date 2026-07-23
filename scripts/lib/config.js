@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const CONFIG_DIR = path.join(os.homedir(), '.config', 'shopify-feature-docs');
+const CONFIG_DIR = path.join(os.homedir(), '.config', 'shopify-apps-doc-writer');
 
 const DEFAULTS = {
   viewport: { width: 1440, height: 900 },

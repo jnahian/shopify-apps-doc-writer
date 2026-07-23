@@ -1,5 +1,5 @@
 {
-  "name": "shopify-feature-docs",
+  "name": "shopify-apps-doc-writer",
   "version": "0.1.0",
   "private": true,
   "description": "Claude Code plugin: merchant-facing feature docs for embedded Shopify apps with real, reproducible screenshots.",

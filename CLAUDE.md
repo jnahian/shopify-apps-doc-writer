@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A **Claude Code plugin** (`shopify-feature-docs`), not an application. Most of its "source" is markdown that instructs Claude at runtime — `commands/*.md`, `skills/shopify-feature-docs/SKILL.md`, and its `references/`. The only executable code is two Node scripts (plus their shared lib) and a vendoring shell script. Behavior changes usually mean editing markdown, not JS.
+A **Claude Code plugin** (`shopify-apps-doc-writer`), not an application. Most of its "source" is markdown that instructs Claude at runtime — `commands/*.md`, `skills/shopify-apps-doc-writer/SKILL.md`, and its `references/`. The only executable code is two Node scripts (plus their shared lib) and a vendoring shell script. Behavior changes usually mean editing markdown, not JS.
 
 `SPEC.md` is the design source of truth (v1 scope, non-goals, build order, v2 backlog). Check it before adding anything — several obvious-seeming features are deliberately deferred to v2 (annotation, `/update-docs` staleness detection, demo-data seeding, multi-locale).
 
@@ -46,4 +46,4 @@ docs/<feature-slug>/{index.md, manifest.json, meta.json, screenshots/NN-*.png}
 - **Read-only guarantee** is enforced twice: `DESTRUCTIVE_PATTERN` in `capture.js` refuses destructive-looking action selectors, and SKILL.md forbids Claude from ever setting `"mutation": true` to override it. Both halves must stay.
 - **Selector policy** (`references/manifest-schema.md`): `data-testid` > aria-label/role > visible text. Never hashed Polaris class names. `waitFor` is required on every shot — `capture.js` validates this because Polaris skeleton loaders photobomb otherwise.
 - **Frame transparency**: `findInPageOrIframe` in `scripts/lib/shopify.js` resolves every selector against the admin page *then* the app iframe, so manifest authors never specify a frame. `crop: "iframe"` uses `APP_IFRAME_SELECTOR` directly.
-- **Config is per-user and never committed**: `~/.config/shopify-feature-docs/<app-key>.json` + `<app-key>.auth.json` (Playwright storageState, chmod 600). Multi-app support is the reason for `--app <key>` everywhere; `resolveAppKey` falls back to the single existing config. Team consistency comes from the plugin itself, not shared config — the one team-shared artifact is `.agents/product-marketing.md` in the target app's repo.
+- **Config is per-user and never committed**: `~/.config/shopify-apps-doc-writer/<app-key>.json` + `<app-key>.auth.json` (Playwright storageState, chmod 600). Multi-app support is the reason for `--app <key>` everywhere; `resolveAppKey` falls back to the single existing config. Team consistency comes from the plugin itself, not shared config — the one team-shared artifact is `.agents/product-marketing.md` in the target app's repo.
