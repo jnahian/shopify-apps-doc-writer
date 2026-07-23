@@ -15,3 +15,4 @@ docs/*
 
 # OS noise
 .DS_Store
+.superpowers/
