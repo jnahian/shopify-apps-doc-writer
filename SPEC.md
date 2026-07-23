@@ -331,7 +331,8 @@ All external targets: gate #3 (explicit confirmation with a precise summary of w
 - Read-only guarantee: script refuses manifests containing actions against elements matching submit/destructive patterns unless a `"mutation": true` flag is set on the shot — and the SKILL.md forbids Claude from setting that flag in v1.
 
 ### Dependencies
-- `playwright` (chromium). Postinstall or first-run check: `npx playwright install chromium` with a friendly prompt.
+- `playwright` (npm package only — no browser download). Login, capture, and verification all drive the **system Google Chrome** (`channel:'chrome'` for capture/verify, CDP for login), so `npx playwright install` is never needed. `npm install` auto-runs on first session via `hooks/ensure-deps.js`.
+- **Google Chrome** installed (the one browser everything uses).
 - Node ≥ 20. No other runtime deps beyond dev-standard.
 
 ---

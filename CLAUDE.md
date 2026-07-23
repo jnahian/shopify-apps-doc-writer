@@ -11,8 +11,7 @@ A **Claude Code plugin** (`shopify-apps-doc-writer`), not an application. Most o
 ## Commands
 
 ```bash
-npm install
-npx playwright install chromium
+npm install                        # auto-runs on first session via hooks/ensure-deps.js
 ./scripts/vendor-skills.sh [sha]   # pulls 5 writing skills into skills/vendored/, rewrites VERSIONS.md
 
 node scripts/setup-auth.js --app <key> [--store x.myshopify.com] [--handle <app-handle>]

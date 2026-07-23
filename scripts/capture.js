@@ -210,21 +210,25 @@ async function main() {
   try {
     ({ chromium } = require('playwright'));
   } catch {
-    console.error(
-      'Playwright is not installed. From the plugin root run:\n  npm install\n  npx playwright install chromium'
-    );
+    console.error('Playwright is not installed. From the plugin root run:\n  npm install');
     process.exit(1);
   }
 
   let browser;
   try {
+    // Drive the system Google Chrome (channel:'chrome') — the same browser
+    // login uses — so no bundled-Chromium download is needed. Capture loads an
+    // already-authenticated session, so the login-page automation detection
+    // that forces CDP in setup-auth doesn't apply; output is identical to
+    // bundled Chromium (validated 2026-07-24).
     browser = await chromium.launch({
+      channel: 'chrome',
       headless: args.headed ? false : config.capture.headless !== false,
     });
   } catch (err) {
     console.error(
-      `Could not launch Chromium: ${err.message}\n` +
-        'If the browser is missing, run: npx playwright install chromium'
+      `Could not launch Google Chrome: ${err.message}\n` +
+        'Capture uses your installed Google Chrome — install it from https://www.google.com/chrome/.'
     );
     process.exit(1);
   }

@@ -43,8 +43,8 @@ const LOGIN_TIMEOUT_MS = 5 * 60 * 1000;
  * Playwright *launches* (automation flags / navigator.webdriver) — bundled
  * Chromium and channel:'chrome' alike. So we spawn a real Chrome ourselves
  * with a debugging port and attach over CDP: no automation flags, login
- * behaves normally, and the resulting cookies work fine in headless
- * Chromium afterwards (verified — capture.js needs no special handling).
+ * behaves normally. Once authenticated, the cookies drive headless system
+ * Chrome fine — capture and the verification shot both use channel:'chrome'.
  */
 const CDP_PORT = 9333;
 
@@ -92,10 +92,7 @@ function loadPlaywright() {
   try {
     return require('playwright');
   } catch {
-    console.error(
-      'Playwright is not installed. From the plugin root run:\n' +
-        '  npm install\n  npx playwright install chromium'
-    );
+    console.error('Playwright is not installed. From the plugin root run:\n  npm install');
     process.exit(1);
   }
 }
@@ -205,8 +202,10 @@ async function main() {
   console.log(`Auth state saved: ${statePath}`);
 
   // --- Headless verification shot ------------------------------------------
+  // System Chrome (channel:'chrome'), same as capture — no bundled-Chromium
+  // download needed. Loading the saved session, no login page involved.
   console.log('Verifying the saved session headlessly…');
-  const verifyBrowser = await chromium.launch({ headless: true });
+  const verifyBrowser = await chromium.launch({ headless: true, channel: 'chrome' });
   const verifyContext = await verifyBrowser.newContext({
     viewport: config.viewport,
     storageState: statePath,

@@ -17,9 +17,9 @@
  *
  * Always exits 0 — a bootstrap must never break session start.
  *
- * Note: this installs npm deps only. Playwright's browser binaries
- * (`npx playwright install chromium`) are a separate ~150MB download; the
- * capture scripts print that hint if the browser is missing.
+ * Note: this installs the `playwright` npm package only. No browser download
+ * is needed — login, capture, and verification all drive the system Google
+ * Chrome (channel:'chrome' / CDP), so `npx playwright install` is never run.
  */
 
 const { spawn } = require('child_process');
