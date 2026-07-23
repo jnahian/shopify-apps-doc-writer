@@ -8,7 +8,9 @@ node_modules/
 # Usage output, not plugin source. Docs are meant to land in the target app's
 # repo; they only appear here because the plugin was dogfooded from its own repo.
 # Keeping them out of the source tree stops installs from shipping them.
-docs/
+docs/*
+# ...except our own design specs/plans, which are plugin source, not usage output.
+!docs/superpowers/
 .agents/*.product-marketing.md
 
 # OS noise
