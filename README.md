@@ -37,7 +37,14 @@ No gate is ever auto-approved. Capture is read-only — the manifest never conta
 
 ## Install
 
-There's nothing to install by hand. The five writing skills ship with the plugin (in `skills/vendored/`, MIT — see its `VERSIONS.md`), and `npm install` runs automatically on your first session — a `SessionStart` hook (`hooks/ensure-deps.js`) installs Playwright in the background when it's missing, and again after a plugin update.
+```bash
+claude plugin marketplace add https://github.com/jnahian/shopify-apps-doc-writer
+claude plugin install shopify-apps-doc-writer@shopify-apps-doc-writer
+```
+
+Or from inside Claude Code: `/plugin marketplace add jnahian/shopify-apps-doc-writer`, then `/plugin install shopify-apps-doc-writer@shopify-apps-doc-writer`.
+
+Beyond that, there's nothing to install by hand. The five writing skills ship with the plugin (in `skills/vendored/`, MIT — see its `VERSIONS.md`), and `npm install` runs automatically on your first session — a `SessionStart` hook (`hooks/ensure-deps.js`) installs Playwright in the background when it's missing, and again after a plugin update.
 
 Login, capture, and verification all drive your installed **Google Chrome** — there's no separate browser download (`npx playwright install`). You need Chrome installed and Node ≥ 20. Then in Claude Code, run `/docs-setup`.
 
