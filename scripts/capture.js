@@ -166,11 +166,16 @@ async function captureShot(page, config, shot, outDir) {
   return file;
 }
 
+function resolveOutDir(args, manifestPath) {
+  if (args['out-dir']) return path.resolve(args['out-dir']);
+  return path.join(path.dirname(manifestPath), 'screenshots');
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.manifest) {
     console.error(
-      'Usage: node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--headed]'
+      'Usage: node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--out-dir <dir>] [--headed]'
     );
     process.exit(1);
   }
@@ -203,7 +208,7 @@ async function main() {
     }
   }
 
-  const outDir = path.join(path.dirname(manifestPath), 'screenshots');
+  const outDir = resolveOutDir(args, manifestPath);
   fs.mkdirSync(outDir, { recursive: true });
 
   let chromium;
@@ -276,7 +281,11 @@ async function main() {
   console.log('Done.');
 }
 
-main().catch((err) => {
-  console.error(err.stack || String(err));
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err.stack || String(err));
+    process.exit(1);
+  });
+}
+
+module.exports = { resolveOutDir };
