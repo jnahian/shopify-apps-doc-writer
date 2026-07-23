@@ -84,7 +84,7 @@ shopify-feature-docs/
 │       ├── ai-seo/
 │       └── content-strategy/
 └── scripts/
-    ├── setup-auth.js                # headed login → storageState + verification shot
+    ├── setup-auth.js                # real-Chrome CDP login → storageState + verification shot
     ├── capture.js                   # executes a shot manifest → numbered PNGs
     └── lib/
         ├── config.js                # load/validate per-user config, resolve app key
@@ -153,7 +153,7 @@ Phased and resumable. `/docs-setup` runs all phases; `/docs-setup auth|publish|c
 ### Phase 1 — Capture (auth)
 1. Ask: dev store URL, app handle. Confirm viewport default 1440×900 (don't ask open-ended).
 2. Run `scripts/setup-auth.js`:
-   - Launch Playwright **headed**.
+   - Spawn **real Google Chrome** with `--remote-debugging-port` and a dedicated profile dir, then attach over CDP. Playwright-*launched* browsers (bundled Chromium and `channel:'chrome'` alike) are rejected by Shopify's login page — it silently no-ops the submit.
    - User logs into Shopify admin manually (handles 2FA/captcha — the script never touches credentials).
    - Persist storageState to the per-user auth path.
 3. **Verification shot:** immediately navigate to `/admin/apps/<handle>` headless with the saved state, screenshot, show the user. Catches wrong store / app not installed / session issues at setup time.
@@ -320,7 +320,7 @@ All external targets: gate #3 (explicit confirmation with a precise summary of w
 
 ### `scripts/setup-auth.js`
 - Args: `--app <key>` (or interactive).
-- Launch headed Chromium at `https://<store>/admin`; wait for user to complete login (poll for an authenticated-admin selector); save storageState to the per-user path; run the verification shot; print result path.
+- Spawn real Chrome (CDP port 9333, dedicated profile dir) at `https://<store>/admin` and attach with `connectOverCDP`; reuse an already-listening browser if one is there; wait for the user to complete login (poll every page for an authenticated-admin selector); export storageState from `contexts()[0]` to the per-user path; quit the Chrome we spawned; run the verification shot; print result path.
 
 ### `scripts/capture.js`
 - Args: `--manifest <path> --app <key> [--only <shot-id>] [--headed]`.

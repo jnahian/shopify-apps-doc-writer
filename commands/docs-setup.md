@@ -19,7 +19,7 @@ Config lives at `~/.config/shopify-feature-docs/<app-key>.json` (per-user, never
    - App key (short id for config, e.g. `storeseo` — suggest one derived from the handle)
    - Viewport: confirm the default **1440×900** (yes/no, don't ask open-ended).
 2. Write the config skeleton (store, appHandle, appKey, viewport, locale `en`, capture defaults: mode `full-admin`, outputDir `docs`, browser `chromium`, headless `true`).
-3. Run `node scripts/setup-auth.js --app <key>` from the plugin root. This launches a **headed** browser; tell the user to log into the Shopify admin in that window (2FA/captcha are handled by them — the script never sees credentials). The script waits for login, saves Playwright storageState to the per-user auth path, then takes a headless **verification screenshot** of `/admin/apps/<handle>` with the saved session.
+3. Run `node scripts/setup-auth.js --app <key>` from the plugin root. This spawns **real Google Chrome** with a CDP port and a dedicated profile, then attaches to it — Shopify's login silently no-ops in any browser Playwright launches, so this indirection is required, not incidental. Tell the user to log into the Shopify admin in that window (2FA/captcha are handled by them — the script never sees credentials). The script waits for login, exports storageState to the per-user auth path, then takes a headless **verification screenshot** of `/admin/apps/<handle>` with the saved session.
 4. Show the verification screenshot to the user and ask them to confirm it shows their app inside the admin. This catches wrong store / app not installed / broken session at setup time, not mid-capture.
 5. If the script exits with code 10 or the verification shot shows a login page, the session didn't stick — rerun the script.
 
