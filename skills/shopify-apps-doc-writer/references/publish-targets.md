@@ -27,14 +27,24 @@ Nothing to do beyond gate 2 — the repo copy *is* the publication. Print the pa
 
 ## `google-docs` (hardcoded known-good path)
 
-Uses the connected Google Drive / Google Docs tooling. At gate 3, state exactly: "*N* screenshots will be uploaded to Drive folder *X*, and 1 Google Doc titled '*Title*' will be created there."
+**Check which Google tooling is actually connected first — it decides which of the two paths below applies.** Inline images need a Google *Docs* API tool (`batchUpdate` / `insertInlineImage`). A Google *Drive* MCP alone cannot place an image inside a document, no matter that it can upload one.
 
-1. **Upload screenshots to Drive** — into the configured parent folder (`publish.parentFolderId`), or create a per-doc subfolder named after the slug and upload there. Record each file's Drive ID.
-2. **Create the Doc** in the same location. Convert the markdown structure via the Docs API:
-   - `#`/`##`/`###` → HEADING_1/2/3 paragraph styles; the blockquote value statement → italic subtitle line.
-   - Lists → ordered/unordered list paragraphs; `**bold**` → bold text runs.
-   - At each image's markdown position, `insertInlineImage` referencing the uploaded Drive file; put the caption as an italic line below it.
-3. Write the resulting Doc URL into `meta.json` as above.
+### Drive-only (the common case, verified 2026-07-23)
+
+Drive's `create_file` converts `text/html` into a native Google Doc — real heading styles, list numbering, bold. Screenshots degrade to placeholder markers.
+
+1. Convert `index.md` with `scripts/lib/md2html.js` (`mdToHtml(markdown, slug)`). **Do not hand-roll this conversion** — the module exists because of a trap: a screenshot between two numbered steps closes the `<ol>` and restarts numbering at "1." for every following step. `scripts/lib/md2html.test.js` guards it.
+2. `create_file` with `title`, `parentId` = `publish.parentFolderId`, `contentMimeType: "text/html"`, and the HTML in `textContent`.
+3. **Verify by reading the Doc back** (`read_file_content`) before reporting success. The create response reports `fileSize: 1` for Google-native docs regardless of content, so it proves nothing.
+4. Write the resulting Doc URL into `meta.json` as above.
+
+Known conversion losses: inline `` `code` `` flattens to plain text; screenshots are placeholders only. State both at gate 3.
+
+At gate 3, state exactly: "1 Google Doc titled '*Title*' will be created in Drive folder *X*. 0 images uploaded — *N* screenshots publish as `[Screenshot: …]` markers, which a reader outside this machine cannot resolve."
+
+### With a Google Docs API tool connected
+
+Then the full path is available: upload each screenshot to Drive (into `publish.parentFolderId`, or a per-doc subfolder named after the slug), record the file IDs, create the Doc, and `insertInlineImage` at each image's markdown position with the caption as an italic line below. At gate 3 state: "*N* screenshots will be uploaded to Drive folder *X*, and 1 Google Doc titled '*Title*' will be created there."
 
 If any upload fails mid-way, stop, report which step failed and what was already created (so the user can clean up or retry) — never silently retry writes.
 

@@ -19,7 +19,12 @@ node scripts/setup-auth.js --app <key> [--store x.myshopify.com] [--handle <app-
 node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--headed]
 ```
 
-There is no test suite, linter, or build step. Verify script changes by running a real capture against a manifest.
+```bash
+node scripts/lib/shopify.test.js    # selector resolution (visible-match preference)
+node scripts/lib/md2html.test.js    # markdown→HTML (ordered-list numbering trap)
+```
+
+There is no test runner, linter, or build step — the two self-checks above are plain `assert` scripts. Verify capture changes by running a real capture against a manifest.
 
 `skills/vendored/` currently holds only `VERSIONS.md` — the skills are not vendored yet. SKILL.md handles this gracefully (falls back to the doc template), so don't assume those directories exist.
 
