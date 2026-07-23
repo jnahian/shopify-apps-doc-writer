@@ -77,7 +77,12 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory }) {
   const makeTmp = tmpFactory || (() => fs.mkdtempSync(path.join(os.tmpdir(), 'update-')));
   const tmpDir = makeTmp();
 
-  capture({ manifestPath, appKey, outDir: tmpDir }); // before drift computation
+  try {
+    capture({ manifestPath, appKey, outDir: tmpDir }); // before drift computation
+  } catch (err) {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    throw err;
+  }
 
   const copy = detectCopyDrift(path.join(docDir, 'index.md'), publish.publishedHash);
   const shots = classifyScreenshots(path.join(docDir, 'screenshots'), tmpDir, shotIds);

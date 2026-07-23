@@ -68,7 +68,7 @@ shopify-apps-doc-writer/
 ├── commands/
 │   ├── docs-setup.md                # setup wizard (3 phases, resumable)
 │   ├── write-docs.md                # main workflow entry point
-│   └── update-docs.md               # v2 stub — prints "coming soon" + pointer to manifest re-run
+│   └── update-docs.md               # drift detection → re-shoot → re-publish
 ├── skills/
 │   ├── shopify-apps-doc-writer/
 │   │   ├── SKILL.md                 # orchestrator (see §7)
@@ -292,7 +292,7 @@ docs/<feature-slug>/
 }
 ```
 
-`contentHash` vs `publishedHash` is the hook for v2 `/update-docs` staleness detection ("copy changed since last publish — re-push?").
+`contentHash` vs `publishedHash` is what `/update-docs` staleness detection uses ("copy changed since last publish — re-push?").
 
 ---
 

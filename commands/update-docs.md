@@ -22,7 +22,7 @@ Parse the JSON printed on stdout.
 
 Show the user, from the JSON:
 - whether `copy.changed` is true ("the doc's text changed since publish"), and
-- `screenshots.changedCount` of `screenshots.total`, listing each `shots[].file` where `changed` is true.
+- `screenshots.changedCount` of `screenshots.total`, listing each `screenshots.shots[].file` where `changed` is true.
 
 ## 3. Promote fresh screenshots (local — confirm first)
 

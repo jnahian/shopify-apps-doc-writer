@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A **Claude Code plugin** (`shopify-apps-doc-writer`), not an application. Most of its "source" is markdown that instructs Claude at runtime — `commands/*.md`, `skills/shopify-apps-doc-writer/SKILL.md`, and its `references/`. The only executable code is two Node scripts (plus their shared lib) and a vendoring shell script. Behavior changes usually mean editing markdown, not JS.
 
-`SPEC.md` is the design source of truth (v1 scope, non-goals, build order, v2 backlog). Check it before adding anything — several obvious-seeming features are deliberately deferred to v2 (annotation, `/update-docs` staleness detection, demo-data seeding, multi-locale).
+`SPEC.md` is the design source of truth (v1 scope, non-goals, build order, v2 backlog). Check it before adding anything — several obvious-seeming features are deliberately deferred to v2 (annotation, demo-data seeding, multi-locale).
 
 ## Commands
 
