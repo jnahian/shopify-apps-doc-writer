@@ -5,5 +5,11 @@ node_modules/
 *.auth.json
 *.storage-state.json
 
+# Usage output, not plugin source. Docs are meant to land in the target app's
+# repo; they only appear here because the plugin was dogfooded from its own repo.
+# Keeping them out of the source tree stops installs from shipping them.
+docs/
+.agents/*.product-marketing.md
+
 # OS noise
 .DS_Store
