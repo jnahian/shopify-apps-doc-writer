@@ -1,6 +1,6 @@
 ---
 name: shopify-apps-doc-writer
-description: Write merchant-facing feature documentation for a Shopify app with real screenshots. Use whenever the user wants to document a feature, write a help article, user guide, how-to, or knowledge-base entry for the app, update feature docs after a release, or mentions /write-docs — even if they don't say "documentation" explicitly.
+description: Write merchant-facing feature documentation for a Shopify app with real screenshots. Use whenever the user wants to document a feature, write a help article, user guide, how-to, onboarding walkthrough, or knowledge-base entry for the app's merchants, or redo one whose screenshots went stale after a UI change or release — even if they never say "documentation," and even when they only name the audience ("for merchants, not developers") or ask for "real screenshots from the admin." Also the engine behind /write-docs and /update-docs. Not for developer- or marketing-facing writing: API/endpoint references, READMEs, contributor or setup docs, release notes, changelogs, or blog posts.
 ---
 
 # shopify-apps-doc-writer — Orchestrator
