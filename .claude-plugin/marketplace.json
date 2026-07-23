@@ -1,0 +1,12 @@
+{
+  "name": "shopify-feature-docs",
+  "owner": { "name": "jnahian" },
+  "description": "Marketplace for the shopify-feature-docs Claude Code plugin.",
+  "plugins": [
+    {
+      "name": "shopify-feature-docs",
+      "source": "./",
+      "description": "Merchant-facing feature docs for embedded Shopify apps, with real, reproducible screenshots captured via Playwright."
+    }
+  ]
+}
