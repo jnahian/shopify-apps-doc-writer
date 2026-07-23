@@ -37,9 +37,11 @@ Note for later: whenever `scripts/capture.js` exits with code **10** (auth expir
 
 1. Offer to generate `product-marketing.md` — the foundation doc that the writing skills read before drafting anything (positioning, audience, tone, key terms).
 2. If accepted, draft it from: the app's landing page, its Shopify App Store listing, and a short interview with the user (target customer, top 3 value props, words/claims to avoid). Show the draft; iterate until they approve.
-3. Ask where to save it:
-   - **Repo** (`.agents/product-marketing.md`) — shared team truth. **Default.**
+3. Ask where to save it. The context is per app, so both locations are keyed by `<app-key>` — multiple apps in one repo never collide:
+   - **Repo** (`.agents/<app-key>.product-marketing.md`) — shared team truth. **Default.**
    - Personal (`~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`) — if they'd rather not commit it.
+
+   The vendored `product-marketing` skill drafts to the un-keyed `.agents/product-marketing.md`; rename its output to the app-keyed path above when you save.
 4. This phase is skippable. If skipped, `/write-docs` will warn that product context is missing but proceed anyway.
 
 ## Wrap-up

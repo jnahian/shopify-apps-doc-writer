@@ -18,7 +18,7 @@ Produce a complete merchant-facing feature doc: prose + real, consistent screens
 ## 0. Preflight
 
 1. Resolve the app config: `~/.config/shopify-apps-doc-writer/<app-key>.json`. Honor `--app <key>`; with no flag, use the single config if exactly one exists, otherwise ask. **If no config exists, stop** and tell the user to run `/docs-setup` first.
-2. Read product context if present: `.agents/product-marketing.md` in the repo, else `~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`. If missing, warn once ("docs will lack shared positioning/tone grounding — `/docs-setup context` fixes this") and proceed.
+2. Read product context if present, per app: `.agents/<app-key>.product-marketing.md` in the repo, else `~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`. (A legacy un-keyed `.agents/product-marketing.md` from a single-app setup is an acceptable fallback — offer to rename it to the app-keyed name.) If missing, warn once ("docs will lack shared positioning/tone grounding — `/docs-setup context` fixes this") and proceed.
 3. If ambiguous, ask (one round, concrete options): **audience** (merchant-facing vs internal) and **doc type** (new doc vs rewrite of an existing one). Default: merchant-facing, new.
 4. Derive `<feature-slug>` (kebab-case). If `docs/<slug>/` already exists and this isn't a rewrite, ask before overwriting.
 

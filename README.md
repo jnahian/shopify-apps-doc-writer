@@ -52,7 +52,7 @@ All config is **per-user and gitignored** — nothing config-related is committe
 - `~/.config/shopify-apps-doc-writer/<app-key>.json` — store, app handle, viewport, capture + publish settings
 - `~/.config/shopify-apps-doc-writer/<app-key>.auth.json` — Playwright storageState (your login session; never in the repo)
 
-Team consistency comes from the plugin itself (SKILL.md conventions, doc template, viewport default), not shared config. The one team-shared artifact is `product-marketing.md` (positioning/tone foundation), which setup offers to save to the repo at `.agents/product-marketing.md`.
+Team consistency comes from the plugin itself (SKILL.md conventions, doc template, viewport default), not shared config. The one team-shared artifact is each app's product-marketing context (positioning/tone foundation), which setup offers to save to the repo at `.agents/<app-key>.product-marketing.md` — keyed by app so multiple apps in one repo don't collide.
 
 Multiple apps = multiple config files; commands accept `--app <key>`.
 

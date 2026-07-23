@@ -115,7 +115,7 @@ Do **not** vendor the full 47-skill set — pollutes triggering. The orchestrato
 - Path: `~/.config/shopify-apps-doc-writer/<app-key>.json` (e.g. `storeseo.json`).
 - Auth state: `~/.config/shopify-apps-doc-writer/<app-key>.auth.json` (Playwright storageState). Never in repo, never in output dirs.
 - Team consistency comes from the plugin (SKILL.md conventions, doc template, viewport default), not from shared config.
-- **Exception under discussion:** `product-marketing.md` is team-shared truth. Setup asks: "save to repo (`.agents/product-marketing.md`) or keep personal?" Default: repo.
+- **Exception:** the product-marketing context is team-shared truth, keyed per app. Setup asks: "save to repo (`.agents/<app-key>.product-marketing.md`) or keep personal (`~/.config/.../<app-key>.product-marketing.md`)?" Default: repo.
 
 ### Schema
 
