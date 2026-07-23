@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/ensure-deps.js\"; exit 0",
+            "commandWindows": "if (Get-Command node -ErrorAction SilentlyContinue) { node \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\ensure-deps.js\" }",
+            "timeout": 10,
+            "statusMessage": "Checking shopify-apps-doc-writer dependencies..."
+          }
+        ]
+      }
+    ]
+  }
+}

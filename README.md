@@ -37,13 +37,16 @@ No gate is ever auto-approved. Capture is read-only — the manifest never conta
 
 ## Install
 
+`npm install` runs automatically on your first session after installing the plugin — a `SessionStart` hook (`hooks/ensure-deps.js`) installs Playwright in the background when it's missing, and again after a plugin update. You only need the browser binaries and the writing skills:
+
 ```bash
-npm install
 npx playwright install chromium
 ./scripts/vendor-skills.sh   # pulls the five writing skills from coreyhaines31/marketingskills (MIT)
 ```
 
 Then in Claude Code, run `/docs-setup`. Requires Node ≥ 20.
+
+Working from a clone rather than an installed plugin? Run `npm install` yourself — the auto-install hook only fires for the installed plugin.
 
 ## Configuration
 
