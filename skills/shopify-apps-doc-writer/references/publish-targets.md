@@ -11,7 +11,7 @@ After any successful external publish, update `docs/<slug>/meta.json`:
   "target": "google-docs",
   "url": "https://docs.google.com/…",
   "publishedAt": "<ISO timestamp>",
-  "publishedHash": "<sha256 of index.md at publish time>"
+  "publishedHash": "<shasum -a 256 index.md at publish time — hex digest only>"
 }
 ```
 
