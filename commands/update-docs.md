@@ -23,6 +23,7 @@ Parse the JSON printed on stdout.
 Show the user, from the JSON:
 - whether `copy.changed` is true ("the doc's text changed since publish"), and
 - `screenshots.changedCount` of `screenshots.total`, listing each `screenshots.shots[].file` where `changed` is true.
+- any shots with `skipped` true — these carry `driftCheck: false` in the manifest and were re-shot but deliberately not compared (volatile content such as third-party widgets). Say so plainly rather than implying they were verified.
 
 ## 3. Promote fresh screenshots (local — confirm first)
 

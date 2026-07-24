@@ -72,7 +72,6 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory }) {
   }
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  const shotIds = manifest.shots.map((s) => s.id);
   // ponytail: temp dirs intentionally not cleaned up here; caller owns tmpDir cleanup.
   const makeTmp = tmpFactory || (() => fs.mkdtempSync(path.join(os.tmpdir(), 'update-')));
   const tmpDir = makeTmp();
@@ -85,7 +84,7 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory }) {
   }
 
   const copy = detectCopyDrift(path.join(docDir, 'index.md'), publish.publishedHash);
-  const shots = classifyScreenshots(path.join(docDir, 'screenshots'), tmpDir, shotIds);
+  const shots = classifyScreenshots(path.join(docDir, 'screenshots'), tmpDir, manifest.shots);
   return buildReport({ slug: meta.slug, url: publish.url, published: true, tmpDir, copy, shots });
 }
 

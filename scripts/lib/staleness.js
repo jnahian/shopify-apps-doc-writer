@@ -22,10 +22,23 @@ function detectCopyDrift(indexPath, publishedHash) {
   return { changed: currentHash !== publishedHash, currentHash, publishedHash };
 }
 
-/** shotIds come from the manifest; each maps to `<id>.png` in both dirs. */
-function classifyScreenshots(committedDir, freshDir, shotIds) {
-  return shotIds.map((id) => {
+/**
+ * Shots come from the manifest; each maps to `<id>.png` in both dirs. Accepts
+ * either shot objects or bare ids.
+ *
+ * A shot with `driftCheck: false` is never compared. Some shots contain
+ * content nobody controls — third-party widgets that render intermittently,
+ * host-app chrome — so their bytes differ between captures of an unchanged
+ * feature. Comparing them would report drift that isn't there, so they are
+ * re-shot but reported as skipped rather than silently counted as clean.
+ */
+function classifyScreenshots(committedDir, freshDir, shots) {
+  return shots.map((shot) => {
+    const id = typeof shot === 'string' ? shot : shot.id;
     const file = `${id}.png`;
+    if (typeof shot === 'object' && shot.driftCheck === false) {
+      return { file, changed: false, skipped: true };
+    }
     const committed = path.join(committedDir, file);
     const fresh = path.join(freshDir, file);
     const hasCommitted = fs.existsSync(committed);
@@ -36,12 +49,13 @@ function classifyScreenshots(committedDir, freshDir, shotIds) {
     } else {
       changed = sha256File(committed) !== sha256File(fresh);
     }
-    return { file, changed };
+    return { file, changed, skipped: false };
   });
 }
 
 function buildReport({ slug, url, published, tmpDir, copy, shots }) {
-  const changedCount = shots.filter((s) => s.changed).length;
+  const changedCount = shots.filter((s) => s.changed && !s.skipped).length;
+  const skippedCount = shots.filter((s) => s.skipped).length;
   const anyDrift = Boolean((copy && copy.changed) || changedCount > 0);
   return {
     slug,
@@ -49,7 +63,7 @@ function buildReport({ slug, url, published, tmpDir, copy, shots }) {
     url,
     tmpDir,
     copy,
-    screenshots: { changedCount, total: shots.length, shots },
+    screenshots: { changedCount, skippedCount, total: shots.length, shots },
     anyDrift,
   };
 }
@@ -58,11 +72,16 @@ function formatReport(report) {
   if (!report.published) {
     return `"${report.slug}" has not been published yet — nothing to compare against.`;
   }
+  const { changedCount, skippedCount, total } = report.screenshots;
   const lines = [`Doc: ${report.slug}  (published → ${report.url})`];
   lines.push(`Copy:        ${report.copy.changed ? 'CHANGED since publish' : 'unchanged'}`);
-  lines.push(`Screenshots: ${report.screenshots.changedCount} of ${report.screenshots.total} changed`);
+  lines.push(
+    `Screenshots: ${changedCount} of ${total} changed` +
+      (skippedCount ? ` (${skippedCount} skipped)` : '')
+  );
   for (const shot of report.screenshots.shots) {
-    if (shot.changed) lines.push(`  ${shot.file}   CHANGED`);
+    if (shot.skipped) lines.push(`  ${shot.file}   not compared (volatile)`);
+    else if (shot.changed) lines.push(`  ${shot.file}   CHANGED`);
   }
   if (!report.anyDrift) lines.push('Up to date — nothing to do.');
   return lines.join('\n');

@@ -12,6 +12,7 @@ const {
   detectCopyDrift,
   classifyScreenshots,
   buildReport,
+  formatReport,
 } = require('./staleness');
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'stale-test-'));
@@ -36,17 +37,29 @@ fs.writeFileSync(path.join(cd, '03.png'), 'only-committed'); // fresh missing �
 assert.deepStrictEqual(
   classifyScreenshots(cd, fd, ['01', '02', '03']),
   [
-    { file: '01.png', changed: false },
-    { file: '02.png', changed: true },
-    { file: '03.png', changed: true },
+    { file: '01.png', changed: false, skipped: false },
+    { file: '02.png', changed: true, skipped: false },
+    { file: '03.png', changed: true, skipped: false },
   ],
   'classify: unchanged, byte-diff, and missing-side all handled'
+);
+
+// driftCheck:false shots are re-shot but never compared — a volatile shot
+// (third-party widget) must not be reported as drift even when bytes differ.
+assert.deepStrictEqual(
+  classifyScreenshots(cd, fd, [{ id: '02', driftCheck: false }, { id: '01' }]),
+  [
+    { file: '02.png', changed: false, skipped: true },
+    { file: '01.png', changed: false, skipped: false },
+  ],
+  'driftCheck:false skips comparison even for differing bytes'
 );
 
 // buildReport: aggregates changedCount and anyDrift across both axes.
 const shots = classifyScreenshots(cd, fd, ['01', '02', '03']);
 const r = buildReport({ slug: 'x', url: 'u', published: true, tmpDir: fd, copy: { changed: false }, shots });
 assert.strictEqual(r.screenshots.changedCount, 2, 'two shots changed');
+assert.strictEqual(r.screenshots.skippedCount, 0, 'nothing skipped here');
 assert.strictEqual(r.screenshots.total, 3, 'three shots total');
 assert.strictEqual(r.anyDrift, true, 'screenshot drift → anyDrift');
 
@@ -56,4 +69,15 @@ assert.strictEqual(clean.anyDrift, false, 'no copy drift + no shot drift → any
 const copyOnly = buildReport({ slug: 'x', url: 'u', published: true, tmpDir: fd, copy: { changed: true }, shots: [{ file: '01.png', changed: false }] });
 assert.strictEqual(copyOnly.anyDrift, true, 'copy drift alone → anyDrift');
 
-console.log('ok — staleness hashing, classification, and report aggregation');
+// A skipped shot never counts toward drift, even if its bytes differ.
+const skipped = buildReport({
+  slug: 'x', url: 'u', published: true, tmpDir: fd, copy: { changed: false },
+  shots: [{ file: '02.png', changed: false, skipped: true }, { file: '01.png', changed: false, skipped: false }],
+});
+assert.strictEqual(skipped.screenshots.skippedCount, 1, 'one shot skipped');
+assert.strictEqual(skipped.screenshots.changedCount, 0, 'skipped shot not counted as changed');
+assert.strictEqual(skipped.anyDrift, false, 'a skipped shot alone is not drift');
+assert.ok(formatReport(skipped).includes('not compared (volatile)'), 'report names skipped shots');
+assert.ok(formatReport(skipped).includes('(1 skipped)'), 'report shows skipped count');
+
+console.log('ok — staleness hashing, classification, skip handling, and report aggregation');

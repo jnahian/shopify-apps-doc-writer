@@ -77,4 +77,14 @@ assert.throws(
   'capture auth failure propagates exitCode 10'
 );
 
-console.log('ok — update-check detects copy/screenshot drift, handles unpublished, propagates exit codes');
+// driftCheck:false — a volatile shot whose bytes changed must not report drift.
+fs.writeFileSync(
+  path.join(doc, 'manifest.json'),
+  JSON.stringify({ app: 'x', feature: 'f', shots: [{ id: '01' }, { id: '02', driftCheck: false }] })
+);
+r = run({ manifestPath, appKey: 'x', capture: captureShotDrift });
+assert.strictEqual(r.screenshots.skippedCount, 1, 'volatile shot skipped');
+assert.strictEqual(r.screenshots.changedCount, 0, 'changed bytes on a skipped shot are not drift');
+assert.strictEqual(r.anyDrift, false, 'volatile shot alone does not trigger drift');
+
+console.log('ok — update-check detects copy/screenshot drift, honors driftCheck, handles unpublished, propagates exit codes');

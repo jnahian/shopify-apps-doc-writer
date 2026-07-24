@@ -35,6 +35,13 @@ const EXIT_SELECTOR = 20;
 const ACTION_TIMEOUT_MS = 15000;
 const WAITFOR_TIMEOUT_MS = 30000;
 
+// Settle budget. The floor matters: third-party widgets can mount seconds
+// after networkidle, and without it the poll finds two matching frames during
+// the quiet gap *before* they appear and declares the page settled too early.
+const SETTLE_MIN_MS = 3000;
+const SETTLE_POLL_MS = 1000;
+const SETTLE_MAX_TRIES = 10;
+
 /**
  * Read-only guarantee: refuse manifests whose actions target elements that
  * look like they submit or destroy something, unless the shot explicitly
@@ -150,6 +157,8 @@ async function captureShot(page, config, shot, outDir) {
   }
 
   const file = path.join(outDir, `${shot.id}.png`);
+
+  let shoot;
   if (shot.crop === 'iframe') {
     const frameEl = page.locator(APP_IFRAME_SELECTOR).first();
     if (!(await frameEl.isVisible().catch(() => false))) {
@@ -159,11 +168,39 @@ async function captureShot(page, config, shot, outDir) {
       err.code = 'SELECTOR_TIMEOUT';
       throw err;
     }
-    await frameEl.screenshot({ path: file });
+    shoot = () => frameEl.screenshot({ animations: 'disabled' });
   } else {
-    await page.screenshot({ path: file }); // viewport = full-admin context shot
+    // viewport = full-admin context shot
+    shoot = () => page.screenshot({ animations: 'disabled' });
   }
+
+  const buf = await settle(page, shoot);
+  fs.writeFileSync(file, buf);
   return file;
+}
+
+/**
+ * Re-shoot until two consecutive captures are byte-identical.
+ *
+ * `waitFor` returns once the page is navigable, but third-party widgets and
+ * transition indicators keep repainting for a few seconds after that — enough
+ * to make every re-capture of an unchanged UI differ, which would make
+ * /update-docs report drift that isn't there. Polling until the bytes stop
+ * moving makes re-capture reproducible without hardcoding per-app selectors
+ * or a blanket sleep on every shot.
+ */
+async function settle(page, shoot) {
+  await page.waitForTimeout(SETTLE_MIN_MS);
+  let prev = await shoot();
+  for (let i = 1; i < SETTLE_MAX_TRIES; i++) {
+    await page.waitForTimeout(SETTLE_POLL_MS);
+    const next = await shoot();
+    if (next.equals(prev)) return next;
+    prev = next;
+  }
+  // ponytail: give up after the budget and return the last frame — a shot that
+  // never settles (video, live counter) still produces a usable screenshot.
+  return prev;
 }
 
 function resolveOutDir(args, manifestPath) {
