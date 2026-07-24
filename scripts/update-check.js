@@ -48,7 +48,8 @@ function realCapture({ manifestPath, appKey, outDir }) {
     throw e;
   }
   if (res.status !== 0) {
-    const e = new Error(`capture.js failed (exit ${res.status}).`);
+    const cause = res.error ? ` — ${res.error.message}` : '';
+    const e = new Error(`capture.js failed (exit ${res.status})${cause}.`);
     e.exitCode = 1;
     throw e;
   }
@@ -66,7 +67,7 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory }) {
       url: null,
       tmpDir: null,
       copy: null,
-      screenshots: { changedCount: 0, total: 0, shots: [] },
+      screenshots: { changedCount: 0, skippedCount: 0, total: 0, shots: [] },
       anyDrift: false,
     };
   }

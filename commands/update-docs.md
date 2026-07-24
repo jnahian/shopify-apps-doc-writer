@@ -27,7 +27,9 @@ Show the user, from the JSON:
 
 ## 3. Promote fresh screenshots (local — confirm first)
 
-Ask the user to confirm overwriting the committed screenshots with the freshly captured ones.
+Skip this step if `screenshots.changedCount` is `0` (copy-only drift — there is nothing to promote); just `rm -rf <tmpDir>` and continue to step 4.
+
+Otherwise, ask the user to confirm overwriting the committed screenshots with the freshly captured ones.
 
 - If they decline: `rm -rf <tmpDir>` and stop. Nothing changed.
 - If they approve: for each changed shot, copy `<tmpDir>/<file>` over `docs/$1/screenshots/<file>`, then `rm -rf <tmpDir>`.
@@ -58,3 +60,4 @@ Update `docs/$1/meta.json`:
 - If `update-check.js` exits `10`, auth expired — run `/docs-setup auth` and retry.
 - If it exits `20`, a selector no longer resolves: the UI changed structurally and the **manifest** needs updating (re-approve it via `/write-docs`) before `/update-docs` can work.
 - This command never mutates the admin: all captures go through `capture.js`, which enforces the read-only guarantee.
+- A doc published before `publishedHash` was recorded (or recorded with a different hash method) will report copy drift on its first run even if the text never changed. That's expected — re-publishing records the pinned hash and the false positive disappears.
