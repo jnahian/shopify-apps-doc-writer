@@ -46,6 +46,7 @@ The shot manifest is the contract between adaptive discovery and deterministic c
 | `waitStrategy` | no | `"networkidle+selector"` (default) or `"selector"` (skip the network-idle wait — for pages with long-polling/websockets that never go idle) |
 | `crop` | no | `"full-admin"` (default; full viewport — context/navigation shots showing where the feature lives) or `"iframe"` (crops to the app iframe bounding box — feature detail) |
 | `caption` | yes | Used as the image alt/caption in the doc |
+| `driftCheck` | no | Set `false` to exclude this shot from `/update-docs` drift comparison. The shot is still re-shot, but reported as "not compared (volatile)" instead of changed. Use it for shots whose pixels nobody controls — host-app chrome, third-party widgets that render intermittently — which otherwise report drift on an unchanged feature. Prefer `crop: "iframe"` first; reach for this when a `full-admin` context shot proves unstable |
 | `mutation` | no | **Forbidden in v1.** `capture.js` refuses destructive-looking actions unless this is `true`, and the orchestrator must never set it |
 
 ## Actions (v1)

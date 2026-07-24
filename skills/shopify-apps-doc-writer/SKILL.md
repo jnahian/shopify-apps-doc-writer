@@ -85,7 +85,7 @@ Only if config `publish.target` is not `local` and the user wants to publish. Fo
 
 ## 7. Wrap-up
 
-1. Write/refresh `docs/<slug>/meta.json`: title, slug, app, audience, status (`draft` | `approved` | `published`), createdAt, `contentHash` (sha256 of index.md), and on publish: target, url, publishedAt, `publishedHash`.
+1. Write/refresh `docs/<slug>/meta.json`: title, slug, app, audience, status (`draft` | `approved` | `published`), createdAt, `contentHash` (sha256 hex of the raw index.md bytes — `shasum -a 256 index.md`), and on publish: target, url, publishedAt, `publishedHash`.
 2. Summarize: output paths, shot count, discovery sources used, publish URL if any, and any findings (e.g. missing `data-testid` coverage).
 
 ## Output contract

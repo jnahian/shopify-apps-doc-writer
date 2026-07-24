@@ -19,7 +19,7 @@ A Claude Code plugin that writes merchant-facing feature documentation for embed
 
 ### Non-Goals (v1)
 - Screenshot annotation (arrows, highlight boxes, blur/redaction) → **v2**.
-- `/update-docs` staleness detection and re-publish diffing → **v2** (command stubbed).
+- `/update-docs` re-publish *diffing* against a live external doc → **v2**. (Staleness detection + re-shoot + in-place re-publish shipped.)
 - Automated publishing without human confirmation → never.
 - Managing/seeding dev store demo data → manual checklist item only.
 
@@ -68,7 +68,7 @@ shopify-apps-doc-writer/
 ├── commands/
 │   ├── docs-setup.md                # setup wizard (3 phases, resumable)
 │   ├── write-docs.md                # main workflow entry point
-│   └── update-docs.md               # v2 stub — prints "coming soon" + pointer to manifest re-run
+│   └── update-docs.md               # drift detection → re-shoot → re-publish
 ├── skills/
 │   ├── shopify-apps-doc-writer/
 │   │   ├── SKILL.md                 # orchestrator (see §7)
@@ -292,7 +292,7 @@ docs/<feature-slug>/
 }
 ```
 
-`contentHash` vs `publishedHash` is the hook for v2 `/update-docs` staleness detection ("copy changed since last publish — re-push?").
+`contentHash` vs `publishedHash` is what `/update-docs` staleness detection uses ("copy changed since last publish — re-push?").
 
 ---
 
@@ -362,7 +362,6 @@ No gate may be auto-approved. Publishing never happens in the same breath as dra
 ## 13. v2 Backlog
 
 - Annotation pipeline: highlight rects/arrows drawn from manifest coords (sharp/canvas post-process); blur/redaction boxes.
-- `/update-docs`: contentHash-vs-publishedHash staleness detection; `capture.js --only` driven re-shoots; publish diffing.
 - Demo-data seeding script for the dev store.
 - Multi-locale capture (config `locale` array → per-locale screenshot sets).
 - BetterDocs / docs-site MCP as a first-class publish target.
