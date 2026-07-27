@@ -5,7 +5,7 @@
 
 const assert = require('assert');
 const path = require('path');
-const { resolveOutDir } = require('./capture');
+const { resolveOutDir, resolveBrowser } = require('./capture');
 
 // Default: screenshots dir adjacent to the manifest.
 assert.strictEqual(
@@ -22,3 +22,37 @@ assert.strictEqual(
 );
 
 console.log('ok — resolveOutDir honors --out-dir');
+
+// resolveBrowser: precedence CLI > manifest > config > default 'chrome'.
+assert.deepStrictEqual(
+  resolveBrowser({}, {}, {}),
+  { name: 'chrome', engine: 'chromium', channel: 'chrome' },
+  'default is chrome'
+);
+assert.deepStrictEqual(
+  resolveBrowser({}, {}, { capture: { browser: 'webkit' } }),
+  { name: 'webkit', engine: 'webkit' },
+  'config beats default'
+);
+assert.deepStrictEqual(
+  resolveBrowser({}, { browser: 'firefox' }, { capture: { browser: 'webkit' } }),
+  { name: 'firefox', engine: 'firefox' },
+  'manifest beats config'
+);
+assert.deepStrictEqual(
+  resolveBrowser({ browser: 'msedge' }, { browser: 'firefox' }, { capture: { browser: 'webkit' } }),
+  { name: 'msedge', engine: 'chromium', channel: 'msedge' },
+  'CLI beats manifest'
+);
+assert.deepStrictEqual(
+  resolveBrowser({ browser: 'chromium' }, {}, {}),
+  { name: 'chromium', engine: 'chromium' },
+  'bare chromium has no channel'
+);
+assert.throws(
+  () => resolveBrowser({ browser: 'safari' }, {}, {}),
+  /Unknown browser "safari".*chrome, msedge, chromium, firefox, webkit/s,
+  'unknown name throws listing valid names'
+);
+
+console.log('ok — resolveBrowser precedence and validation');
