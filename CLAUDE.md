@@ -19,11 +19,13 @@ npm install                        # auto-runs on first session via hooks/ensure
 
 node scripts/setup-auth.js --app <key> [--store x.myshopify.com] [--handle <app-handle>]
 node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--headed]
+node scripts/build-site.js --app <key> [--out <dir>]   # docs/ → static site; deployed by /docs-deploy via npx wrangler
 ```
 
 ```bash
 node scripts/lib/shopify.test.js    # selector resolution (visible-match preference)
 node scripts/lib/md2html.test.js    # markdown→HTML (ordered-list numbering trap)
+node scripts/build-site.test.js     # site projection (badges, inline images, skip handling)
 ```
 
 There is no test runner, linter, or build step — the two self-checks above are plain `assert` scripts. Verify capture changes by running a real capture against a manifest.
@@ -39,7 +41,7 @@ The whole design rests on one split:
 
 `docs/<slug>/manifest.json` is the contract between the two, and the reproducibility guarantee: re-running it after a UI change regenerates every screenshot. Never bypass `capture.js` with ad-hoc browser screenshots.
 
-**Three hard gates**, none skippable or auto-approvable: (1) manifest before capture, (2) draft before anything leaves local, (3) exact summary of external writes before publish. They're stated in `commands/write-docs.md`, SKILL.md, and `references/publish-targets.md` — keep those consistent.
+**Three hard gates**, none skippable or auto-approvable: (1) manifest before capture, (2) draft before anything leaves local, (3) exact summary of external writes before publish. They're stated in `commands/write-docs.md`, SKILL.md, and `references/publish-targets.md` — keep those consistent. `/docs-deploy` has its own confirmation gate, modeled on gate 3 but separate from these three: it publishes a *projection* of `docs/` to a Cloudflare Pages URL and never touches `meta.json`.
 
 **Output contract** — always produced regardless of publish target; publishing is a projection of it:
 

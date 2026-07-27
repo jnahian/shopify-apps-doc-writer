@@ -11,6 +11,7 @@ Built for [StoreSEO](https://apps.shopify.com/storeseo); multi-app capable by de
 /write-docs <feature>  discover → shot manifest (gate 1) → capture → write
                        → review draft (gate 2) → publish (gate 3, optional)
 /update-docs           detect copy/screenshot drift → re-shoot → re-publish (gate 3)
+/docs-deploy           build internal docs site → confirm → Cloudflare Pages URL
 ```
 
 **Key principle:** discovery is interactive and adaptive (Claude browses the live feature, reads code and ClickUp); capture is deterministic (`scripts/capture.js` executes a versioned JSON **shot manifest**). The manifest is the contract between the two — re-running it after a UI change regenerates every screenshot in a doc.
@@ -69,7 +70,7 @@ Multiple apps = multiple config files; commands accept `--app <key>`.
 
 ```
 .claude-plugin/plugin.json           plugin manifest
-commands/                            /docs-setup · /write-docs · /update-docs
+commands/                            /docs-setup · /write-docs · /update-docs · /docs-deploy
 skills/shopify-apps-doc-writer/         orchestrator SKILL.md + references/
   references/doc-template.md           canonical doc structure
   references/manifest-schema.md        shot manifest schema + selector policy
@@ -78,6 +79,7 @@ skills/vendored/                     pinned writing skills (see VERSIONS.md)
 scripts/setup-auth.js                real-Chrome CDP login → storageState + verification shot
 scripts/capture.js                   manifest → numbered PNGs (exit 10 auth / 20 selector)
 scripts/update-check.js              drift detector for /update-docs
+scripts/build-site.js                docs/ → static site for /docs-deploy (Cloudflare Pages)
 scripts/lib/                         config + Shopify admin helpers
 ```
 

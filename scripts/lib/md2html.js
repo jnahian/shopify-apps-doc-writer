@@ -10,7 +10,9 @@
  * produces and nothing more. If the template grows tables, extend this.
  *
  * Screenshots become placeholder markers: no connected Google Docs API tool
- * can place an inline image, so this is the documented degraded path.
+ * can place an inline image, so this is the documented degraded path. In
+ * 'inline' image mode (docs-site build) screenshots become real
+ * <figure>/<img> elements instead.
  */
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -20,12 +22,18 @@ const inline = (s) =>
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
     .replace(/`(.+?)`/g, '<code>$1</code>');
 
+const attr = (s) => esc(s).replace(/"/g, '&quot;');
+
 /**
  * @param {string} md      doc markdown (docs/<slug>/index.md)
  * @param {string} slug    feature slug, used in the screenshot placeholder path
- * @returns {string}       HTML suitable for Drive create_file (text/html)
+ * @param {object} [opts]  { images: 'placeholder'|'inline', wrap: boolean }
+ *                         'inline' emits real <img> tags (docs-site build);
+ *                         default 'placeholder' is the Google Docs degraded path.
+ * @returns {string}       HTML (wrapped in <html><body> unless wrap:false)
  */
-function mdToHtml(md, slug) {
+function mdToHtml(md, slug, opts = {}) {
+  const inlineImages = opts.images === 'inline';
   const out = [];
   let list = null; // 'ul' | 'ol' | null
 
@@ -56,9 +64,15 @@ function mdToHtml(md, slug) {
 
     const img = line.match(/^!\[(.*?)\]\(screenshots\/(.+?)\)$/);
     if (img) {
-      const marker = `<i>[Screenshot: ${esc(img[2])} — ${esc(img[1])}. See docs/${slug}/screenshots/ in the repo.]</i>`;
-      if (list) appendToLastItem(marker);
-      else out.push(`<p>${marker}</p>`);
+      if (inlineImages) {
+        const fig = `<figure><img src="screenshots/${attr(img[2])}" alt="${attr(img[1])}"><figcaption>${esc(img[1])}</figcaption></figure>`;
+        if (list) appendToLastItem(fig);
+        else out.push(fig);
+      } else {
+        const marker = `<i>[Screenshot: ${esc(img[2])} — ${esc(img[1])}. See docs/${slug}/screenshots/ in the repo.]</i>`;
+        if (list) appendToLastItem(marker);
+        else out.push(`<p>${marker}</p>`);
+      }
       continue;
     }
 
@@ -101,7 +115,8 @@ function mdToHtml(md, slug) {
   }
 
   closeList();
-  return `<html><body>${out.join('\n')}</body></html>`;
+  const body = out.join('\n');
+  return opts.wrap === false ? body : `<html><body>${body}</body></html>`;
 }
 
 module.exports = { mdToHtml };
