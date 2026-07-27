@@ -55,12 +55,14 @@ function realCapture({ manifestPath, appKey, outDir }) {
   }
 }
 
-function run({ manifestPath, appKey, capture = realCapture, tmpFactory }) {
+function run({ manifestPath, appKey, capture = realCapture, tmpFactory, sweep = false }) {
   const docDir = path.dirname(manifestPath);
   const meta = JSON.parse(fs.readFileSync(path.join(docDir, 'meta.json'), 'utf8'));
   const publish = meta.publish || {};
 
-  if (!publish.url) {
+  // Single-doc mode is about refreshing *published* docs; the sweep checks
+  // screenshot drift on drafts too, so it skips this short-circuit.
+  if (!publish.url && !sweep) {
     return {
       slug: meta.slug,
       published: false,
@@ -84,9 +86,73 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory }) {
     throw err;
   }
 
-  const copy = detectCopyDrift(path.join(docDir, 'index.md'), publish.publishedHash);
+  const copy =
+    !sweep || publish.publishedHash
+      ? detectCopyDrift(path.join(docDir, 'index.md'), publish.publishedHash)
+      : null;
   const shots = classifyScreenshots(path.join(docDir, 'screenshots'), tmpDir, manifest.shots);
-  return buildReport({ slug: meta.slug, url: publish.url, published: true, tmpDir, copy, shots });
+  return buildReport({
+    slug: meta.slug,
+    url: publish.url || null,
+    published: Boolean(publish.url),
+    tmpDir,
+    copy,
+    shots,
+  });
+}
+
+/**
+ * Sweep every doc dir under docsDir. Report-only: temp capture dirs are
+ * deleted immediately after each comparison. A selector timeout in one doc
+ * becomes that doc's `error` and the sweep continues; auth expiry (10)
+ * aborts — every subsequent doc would fail identically.
+ */
+function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
+  const docs = [];
+  const skipped = [];
+  const entries = fs.existsSync(docsDir)
+    ? fs.readdirSync(docsDir, { withFileTypes: true }).filter((e) => e.isDirectory())
+    : [];
+
+  for (const e of entries) {
+    const dir = path.join(docsDir, e.name);
+    if (!fs.existsSync(path.join(dir, 'manifest.json'))) {
+      skipped.push({ dir: e.name, reason: 'no manifest.json' });
+      continue;
+    }
+    if (!fs.existsSync(path.join(dir, 'meta.json'))) {
+      skipped.push({ dir: e.name, reason: 'no meta.json' });
+      continue;
+    }
+
+    let report;
+    try {
+      report = run({ manifestPath: path.join(dir, 'manifest.json'), appKey, capture, tmpFactory, sweep: true });
+    } catch (err) {
+      if (err.exitCode === 20) {
+        docs.push({ slug: e.name, published: null, copy: null, screenshots: null, error: 'selector-timeout', anyDrift: false });
+        continue;
+      }
+      throw err;
+    }
+
+    if (report.tmpDir) fs.rmSync(report.tmpDir, { recursive: true, force: true });
+    docs.push({
+      slug: report.slug || e.name,
+      published: report.published,
+      copy: report.copy,
+      screenshots: report.screenshots,
+      error: null,
+      anyDrift: report.anyDrift,
+    });
+  }
+
+  return {
+    docs,
+    skipped,
+    checked: docs.length,
+    anyDrift: docs.some((d) => d.anyDrift),
+  };
 }
 
 function main() {
@@ -117,4 +183,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { run, realCapture };
+module.exports = { run, runAll, realCapture };
