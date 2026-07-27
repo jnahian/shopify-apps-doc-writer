@@ -92,6 +92,9 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory, sweep = 
       ? detectCopyDrift(path.join(docDir, 'index.md'), publish.publishedHash)
       : null;
   const shots = classifyScreenshots(path.join(docDir, 'screenshots'), tmpDir, manifest.shots);
+  // Published-ness keys off meta.publish.url (is there anything to republish?);
+  // build-site.js keys off meta.status. SKILL.md sets both at publish time, so
+  // they agree unless meta.json was hand-edited.
   return buildReport({
     slug: meta.slug,
     url: publish.url || null,
@@ -104,8 +107,9 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory, sweep = 
 
 /**
  * Sweep every doc dir under docsDir. Report-only: temp capture dirs are
- * deleted immediately after each comparison. A selector timeout in one doc
- * becomes that doc's `error` and the sweep continues; auth expiry (10)
+ * deleted immediately after each comparison. Doc-local failures are contained:
+ * missing/malformed files skip the doc, a selector timeout or capture crash
+ * becomes that doc's `error`, and the sweep continues. Only auth expiry (10)
  * aborts — every subsequent doc would fail identically.
  */
 function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
@@ -117,12 +121,18 @@ function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
 
   for (const e of entries) {
     const dir = path.join(docsDir, e.name);
-    if (!fs.existsSync(path.join(dir, 'manifest.json'))) {
-      skipped.push({ dir: e.name, reason: 'no manifest.json' });
-      continue;
+    let defect = null;
+    for (const f of ['manifest.json', 'meta.json']) {
+      const p = path.join(dir, f);
+      if (!fs.existsSync(p)) defect = `no ${f}`;
+      else {
+        try { JSON.parse(fs.readFileSync(p, 'utf8')); } catch { defect = `${f} is not valid JSON`; }
+      }
+      if (defect) break;
     }
-    if (!fs.existsSync(path.join(dir, 'meta.json'))) {
-      skipped.push({ dir: e.name, reason: 'no meta.json' });
+    if (!defect && !fs.existsSync(path.join(dir, 'index.md'))) defect = 'no index.md';
+    if (defect) {
+      skipped.push({ dir: e.name, reason: defect });
       continue;
     }
 
@@ -130,11 +140,18 @@ function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
     try {
       report = run({ manifestPath: path.join(dir, 'manifest.json'), appKey, capture, tmpFactory, sweep: true });
     } catch (err) {
-      if (err.exitCode === 20) {
-        docs.push({ slug: e.name, published: null, copy: null, screenshots: null, error: 'selector-timeout', anyDrift: false });
-        continue;
-      }
-      throw err;
+      // exitCode 10 (auth) and unexpected errors abort; anything else from
+      // capture is doc-local and must not kill the sweep.
+      if (err.exitCode === EXIT_AUTH || !err.exitCode) throw err;
+      docs.push({
+        slug: e.name,
+        published: null,
+        copy: null,
+        screenshots: null,
+        error: err.exitCode === EXIT_SELECTOR ? 'selector-timeout' : 'capture-failed',
+        anyDrift: false,
+      });
+      continue;
     }
 
     if (report.tmpDir) fs.rmSync(report.tmpDir, { recursive: true, force: true });
@@ -160,7 +177,8 @@ function formatSweep(report) {
   const lines = [`Checked ${report.checked} doc(s)`];
   for (const d of report.docs) {
     if (d.error) {
-      lines.push(`  ${d.slug}   ERROR: ${d.error} — manifest needs updating (/write-docs)`);
+      const hint = d.error === 'selector-timeout' ? ' — manifest needs updating (/write-docs)' : '';
+      lines.push(`  ${d.slug}   ERROR: ${d.error}${hint}`);
       continue;
     }
     const parts = [];

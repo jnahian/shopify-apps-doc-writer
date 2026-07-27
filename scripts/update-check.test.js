@@ -112,7 +112,11 @@ makeDoc('clean-pub', { url: 'u', publishedHash: 'CURRENT' }, 'SAME');
 makeDoc('stale-pub', { url: 'u', publishedHash: 'CURRENT' }, 'OLD');
 makeDoc('stale-draft', null, 'OLD'); // never published — must still get screenshot drift
 makeDoc('broken-ui', null, 'X');
+makeDoc('crash-doc', null, 'X'); // capture exits 1 → per-doc error, sweep continues
 fs.mkdirSync(path.join(docsRoot, 'not-a-doc')); // no manifest.json → skipped, not a crash
+// Malformed JSON in one doc must skip that doc, never abort the sweep.
+makeDoc('bad-meta', null, 'X');
+fs.writeFileSync(path.join(docsRoot, 'bad-meta', 'meta.json'), '{nope');
 
 // Fake capture keyed by doc: clean-pub re-shoots identical bytes, broken-ui
 // hits a selector timeout, everything else re-shoots changed bytes.
@@ -121,6 +125,11 @@ const sweepCapture = ({ manifestPath, outDir }) => {
   if (slug === 'broken-ui') {
     const e = new Error('selector timeout');
     e.exitCode = 20;
+    throw e;
+  }
+  if (slug === 'crash-doc') {
+    const e = new Error('capture.js failed (exit 1)');
+    e.exitCode = 1;
     throw e;
   }
   fs.writeFileSync(path.join(outDir, '01.png'), slug === 'clean-pub' ? 'SAME' : 'NEW');
@@ -135,11 +144,14 @@ const trackedTmp = () => {
 
 const sweep = runAll({ docsDir: docsRoot, appKey: 'x', capture: sweepCapture, tmpFactory: trackedTmp });
 
-assert.strictEqual(sweep.checked, 4, 'four doc dirs checked');
+assert.strictEqual(sweep.checked, 5, 'five doc dirs checked');
 assert.deepStrictEqual(
-  sweep.skipped,
-  [{ dir: 'not-a-doc', reason: 'no manifest.json' }],
-  'dir without manifest skipped with reason'
+  sweep.skipped.sort((a, b) => a.dir.localeCompare(b.dir)),
+  [
+    { dir: 'bad-meta', reason: 'meta.json is not valid JSON' },
+    { dir: 'not-a-doc', reason: 'no manifest.json' },
+  ],
+  'defective doc dirs skipped with reasons, not fatal'
 );
 
 const bySlug = Object.fromEntries(sweep.docs.map((d) => [d.slug, d]));
@@ -158,6 +170,9 @@ assert.strictEqual(bySlug['stale-draft'].anyDrift, true, 'draft drift counts');
 
 assert.strictEqual(bySlug['broken-ui'].error, 'selector-timeout', 'selector timeout contained per-doc');
 assert.strictEqual(bySlug['broken-ui'].screenshots, null, 'no comparison data for the broken doc');
+
+assert.strictEqual(bySlug['crash-doc'].error, 'capture-failed', 'capture crash contained per-doc');
+assert.strictEqual(bySlug['crash-doc'].anyDrift, false, 'a crashed doc is not drift');
 
 assert.strictEqual(sweep.anyDrift, true, 'aggregate drift flag set');
 

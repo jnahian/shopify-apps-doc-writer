@@ -23,6 +23,9 @@ One line per entry in `docs`:
 
 - `error: "selector-timeout"` → **selector broken** — the UI changed
   structurally; drift could not be measured for this doc.
+- `error: "capture-failed"` → **capture crashed** for this doc (not auth, not
+  a selector) — show it and suggest re-running that doc's capture alone to see
+  the real error: `node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key>`.
 - else if `copy.changed` is true or `screenshots.changedCount > 0` → **stale**;
   say exactly what: "copy changed", "N of M shots changed" (list the changed
   `shots[].file` names), and append "(draft)" when `published` is false.
@@ -30,7 +33,8 @@ One line per entry in `docs`:
 
 Also report:
 
-- `skipped` dirs with their reasons (not doc dirs — missing manifest/meta);
+- `skipped` dirs with their reasons (not valid doc dirs — missing or
+  malformed manifest/meta/index.md);
 - any `shots[].skipped: true` as "re-shot but deliberately not compared
   (`driftCheck: false` — volatile content)". Never imply those were verified.
 
