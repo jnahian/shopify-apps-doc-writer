@@ -12,7 +12,9 @@ Built for [StoreSEO](https://apps.shopify.com/storeseo); multi-app capable by de
                        → review draft (gate 2) → publish (gate 3, optional)
 /update-docs           detect copy/screenshot drift → re-shoot → re-publish (gate 3)
 /docs-deploy           build internal docs site → confirm → Cloudflare Pages URL
+                       → optional Slack heads-up (draft-only, never auto-sent)
 /docs-check            re-shoot every manifest → report which docs went stale
+                       (report-only: writes nothing, needs no gates)
 ```
 
 **Key principle:** discovery is interactive and adaptive (Claude browses the live feature, reads code and ClickUp); capture is deterministic (`scripts/capture.js` executes a versioned JSON **shot manifest**). The manifest is the contract between the two — re-running it after a UI change regenerates every screenshot in a doc.
@@ -36,6 +38,8 @@ docs/<feature-slug>/
 | 3 | Before external publish | Exact summary of writes to the external target |
 
 No gate is ever auto-approved. Capture is read-only — the manifest never contains actions that mutate store data, and `capture.js` refuses destructive-looking actions.
+
+`/docs-deploy` has its own confirmation gate of the same kind, separate from the three above: it publishes a *projection* of `docs/` to a Cloudflare Pages URL (viewable by anyone with the link) and never touches `meta.json` — per-doc publish records keep their existing meaning.
 
 ## Install
 
