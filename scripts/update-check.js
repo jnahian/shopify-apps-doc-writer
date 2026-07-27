@@ -10,14 +10,15 @@
  * and a machine-readable JSON report to stdout.
  *
  * Exit codes: 0 success (drift or not); 10 auth expired; 20 selector timeout
- * (UI changed — fix manifest); 1 other errors.
+ * (UI changed — fix manifest); 1 other errors. In --all sweep mode, selector
+ * timeouts are per-doc report entries, not exit 20.
  */
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { parseArgs, resolveAppKey } = require('./lib/config');
+const { parseArgs, resolveAppKey, loadConfig } = require('./lib/config');
 const {
   detectCopyDrift,
   classifyScreenshots,
@@ -155,18 +156,42 @@ function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
   };
 }
 
+function formatSweep(report) {
+  const lines = [`Checked ${report.checked} doc(s)`];
+  for (const d of report.docs) {
+    if (d.error) {
+      lines.push(`  ${d.slug}   ERROR: ${d.error} — manifest needs updating (/write-docs)`);
+      continue;
+    }
+    const parts = [];
+    if (d.copy && d.copy.changed) parts.push('copy changed');
+    if (d.screenshots.changedCount) parts.push(`${d.screenshots.changedCount}/${d.screenshots.total} shots changed`);
+    if (d.screenshots.skippedCount) parts.push(`${d.screenshots.skippedCount} not compared`);
+    lines.push(`  ${d.slug}${d.published ? '' : ' (draft)'}   ${parts.length ? parts.join(', ') : 'up to date'}`);
+  }
+  for (const s of report.skipped) lines.push(`  skipped ${s.dir}: ${s.reason}`);
+  return lines.join('\n');
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (!args.manifest) {
-    console.error('Usage: node scripts/update-check.js --manifest docs/<slug>/manifest.json --app <key>');
+  if (Boolean(args.all) === Boolean(args.manifest)) {
+    console.error(
+      'Usage: node scripts/update-check.js --manifest docs/<slug>/manifest.json --app <key>\n' +
+        '   or: node scripts/update-check.js --all --app <key>'
+    );
     process.exit(1);
   }
-  const manifestPath = path.resolve(args.manifest);
   const appKey = resolveAppKey(args.app);
 
   let report;
   try {
-    report = run({ manifestPath, appKey });
+    if (args.all) {
+      const config = loadConfig(appKey);
+      report = runAll({ docsDir: path.resolve(config.capture.outputDir), appKey });
+    } else {
+      report = run({ manifestPath: path.resolve(args.manifest), appKey });
+    }
   } catch (err) {
     if (err.exitCode) {
       console.error(err.message);
@@ -176,7 +201,7 @@ function main() {
     process.exit(1);
   }
 
-  console.error(formatReport(report)); // human summary
+  console.error(args.all ? formatSweep(report) : formatReport(report)); // human summary
   console.log(JSON.stringify(report)); // machine-readable for the command layer
   process.exit(0);
 }
