@@ -331,7 +331,7 @@ All external targets: gate #3 (explicit confirmation with a precise summary of w
 - Read-only guarantee: script refuses manifests containing actions against elements matching submit/destructive patterns unless a `"mutation": true` flag is set on the shot — and the SKILL.md forbids Claude from setting that flag in v1.
 
 ### Dependencies
-- `playwright` (npm package only — no browser download for the default path). Login and verification drive the **system Google Chrome** (CDP for login, `channel:'chrome'` for verify); capture defaults to Chrome too, so `npx playwright install` is never needed out of the box. Non-default engines (`chromium`/`firefox`/`webkit` via config, manifest, or `--browser`) auto-install on first use. `npm install` auto-runs on first session via `hooks/ensure-deps.js`.
+- `playwright` (npm package only — no browser download for the default path). Login and verification drive the **system Google Chrome** (CDP for login, `channel:'chrome'` for verify); capture defaults to Chrome too, so `npx playwright install` is never needed out of the box. Non-default engines (`chromium`/`firefox`/`webkit` via config, manifest, or `--browser`) auto-install on first use — **experimental**, only Chrome is validated end-to-end against a live admin (open questions: whether Shopify accepts a Chrome-minted `storageState` in firefox/webkit, and whether `settle()` converges on those engines). `npm install` auto-runs on first session via `hooks/ensure-deps.js`.
 - **Google Chrome** installed — the only browser required, since login, verification, and default capture all use it; other engines install on demand.
 - Node ≥ 20. No other runtime deps beyond dev-standard.
 

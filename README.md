@@ -46,7 +46,11 @@ Or from inside Claude Code: `/plugin marketplace add jnahian/shopify-apps-doc-wr
 
 Beyond that, there's nothing to install by hand. The five writing skills ship with the plugin (in `skills/vendored/`, MIT — see its `VERSIONS.md`), and `npm install` runs automatically on your first session — a `SessionStart` hook (`hooks/ensure-deps.js`) installs Playwright in the background when it's missing, and again after a plugin update.
 
-Login, verification, and default capture all drive your installed **Google Chrome** — no separate browser download (`npx playwright install`) needed out of the box. Non-default capture engines (Chromium, Firefox, WebKit) auto-install on first use. You need Chrome installed and Node ≥ 20. Then in Claude Code, run `/docs-setup`.
+Login, verification, and default capture all drive your installed **Google Chrome** — no separate browser download (`npx playwright install`) needed out of the box. You need Chrome installed and Node ≥ 20. Then in Claude Code, run `/docs-setup`.
+
+Other capture engines (`chromium`, `firefox`, `webkit`, `msedge`) can be selected per manifest, per config, or with `--browser` — **experimental**: only Chrome is validated end-to-end against a live admin. The three downloadable engines auto-install on first use; `msedge` needs a vendor install like Chrome.
+
+> **Upgrading from before multi-engine capture?** If `~/.config/shopify-apps-doc-writer/<app>.json` has `capture.browser: "chromium"` (the old, inert default that `/docs-setup` used to write), that value is now honored — it will trigger a one-time bundled-Chromium download and render with Chromium instead of Chrome. Delete the key to stay on Chrome.
 
 Working from a clone rather than an installed plugin? Run `npm install` yourself — the auto-install hook only fires for the installed plugin. To re-pin the writing skills to a newer upstream, run `./scripts/vendor-skills.sh` (a maintenance step, not needed for normal use — and re-apply the description de-emphasis afterward, per `skills/vendored/VERSIONS.md`).
 

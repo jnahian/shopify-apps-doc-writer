@@ -287,9 +287,10 @@ async function main() {
   }
 
   // Capture loads an already-authenticated session, so the login-page
-  // automation detection that forces CDP in setup-auth doesn't apply here —
-  // any engine works against the saved storageState (chrome validated
-  // 2026-07-24; storageState is engine-portable JSON).
+  // automation detection that forces CDP in setup-auth doesn't apply here.
+  // storageState is engine-portable JSON, but only chrome is validated
+  // end-to-end (2026-07-24) — whether Shopify accepts a Chrome-minted session
+  // in firefox/webkit is unverified; a rejected one surfaces as exit 10.
   const engine = playwright[spec.engine];
   const launchOpts = {
     headless: args.headed ? false : config.capture.headless !== false,
@@ -312,14 +313,27 @@ async function main() {
       );
       process.exit(1);
     }
+    // Only a missing browser binary is auto-installable. Any other launch
+    // failure (missing system lib, sandbox) would just download ~100MB and
+    // fail again with the real cause discarded.
+    // (Same string Playwright itself matches on to mean "run playwright install".
+    // Case-sensitive: the lowercase variant means a bad explicit executablePath.)
+    if (!err.message.includes("Executable doesn't exist")) {
+      console.error(`Could not launch ${spec.name}: ${err.message}`);
+      process.exit(1);
+    }
     console.error(`${spec.name} is not installed — running: npx playwright install ${spec.name}`);
-    const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
     const install = spawnSync('npx', ['playwright', 'install', spec.name], {
       stdio: 'inherit',
-      cwd: pluginRoot,
+      // Pin to the plugin root so npx uses the local playwright that this
+      // script required — not a registry copy whose browser revisions differ.
+      cwd: path.resolve(__dirname, '..'),
+      shell: process.platform === 'win32',
     });
-    if (install.status !== 0) {
-      console.error(`playwright install ${spec.name} failed (exit ${install.status}).`);
+    if (install.error || install.status !== 0) {
+      console.error(
+        `playwright install ${spec.name} failed: ${install.error ? install.error.message : `exit ${install.status}`}`
+      );
       process.exit(1);
     }
     try {
