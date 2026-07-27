@@ -9,6 +9,7 @@ The shot manifest is the contract between adaptive discovery and deterministic c
   "app": "storeseo",
   "feature": "ai-brand-visibility",
   "viewport": { "width": 1440, "height": 900 },
+  "browser": "chrome",
   "shots": [ … ]
 }
 ```
@@ -18,6 +19,7 @@ The shot manifest is the contract between adaptive discovery and deterministic c
 | `app` | yes | App key — must match a config file (`~/.config/shopify-apps-doc-writer/<app>.json`) |
 | `feature` | yes | Feature slug — must match the containing `docs/<slug>/` directory |
 | `viewport` | no | Overrides the config viewport for this manifest (default 1440×900) |
+| `browser` | no | Pins the rendering engine for this manifest so re-capture reproduces the doc's original look: `chrome` (default) \| `msedge` \| `chromium` \| `firefox` \| `webkit`. Precedence: `--browser` CLI flag > manifest > config `capture.browser` > `chrome`. |
 | `shots` | yes | Ordered array of shot objects |
 
 ## Shot object
