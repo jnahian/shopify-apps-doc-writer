@@ -59,6 +59,7 @@ const index = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8');
 assert.ok(index.includes('<a href="alpha-feature/index.html">Alpha Feature</a>'), 'index links the doc');
 assert.ok(index.includes('Beta Feature'), 'index lists the draft too');
 assert.strictEqual((index.match(/class="badge"/g) || []).length, 1, 'DRAFT badge on the draft only');
+assert.ok(index.includes('<span class="badge">DRAFT</span>'), 'badge text lives in the markup, not CSS');
 assert.ok(index.includes('<time>2026-07-20</time>'), 'published doc shows publishedAt date');
 assert.ok(index.includes('<time>2026-07-22</time>'), 'draft falls back to createdAt');
 
@@ -96,6 +97,7 @@ const cli = require('child_process').spawnSync(
 
 assert.strictEqual(cli.status, 1, 'zero docs exits 1');
 assert.ok(fs.existsSync(path.join(keepMe, 'notes.txt')), 'a --out dir the caller owns survives the zero-docs path');
+assert.deepStrictEqual(fs.readdirSync(keepMe), ['notes.txt'], 'zero docs writes nothing into a --out dir');
 
 fs.rmSync(home, { recursive: true, force: true });
 fs.rmSync(root, { recursive: true, force: true });
