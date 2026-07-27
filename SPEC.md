@@ -130,7 +130,7 @@ Do **not** vendor the full 47-skill set — pollutes triggering. The orchestrato
   "capture": {
     "mode": "full-admin",              // "full-admin" | "iframe" (per-shot override in manifest)
     "outputDir": "docs",              // relative to repo root
-    "browser": "chromium",
+    "browser": "chrome",
     "headless": true
   },
   "publish": {
@@ -332,7 +332,7 @@ All external targets: gate #3 (explicit confirmation with a precise summary of w
 
 ### Dependencies
 - `playwright` (npm package only — no browser download for the default path). Login and verification drive the **system Google Chrome** (CDP for login, `channel:'chrome'` for verify); capture defaults to Chrome too, so `npx playwright install` is never needed out of the box. Non-default engines (`chromium`/`firefox`/`webkit` via config, manifest, or `--browser`) auto-install on first use. `npm install` auto-runs on first session via `hooks/ensure-deps.js`.
-- **Google Chrome** installed (the one browser everything uses).
+- **Google Chrome** installed — the only browser required, since login, verification, and default capture all use it; other engines install on demand.
 - Node ≥ 20. No other runtime deps beyond dev-standard.
 
 ---
