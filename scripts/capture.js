@@ -203,6 +203,27 @@ async function settle(page, shoot) {
   return prev;
 }
 
+const BROWSERS = {
+  chrome: { engine: 'chromium', channel: 'chrome' },
+  msedge: { engine: 'chromium', channel: 'msedge' },
+  chromium: { engine: 'chromium' },
+  firefox: { engine: 'firefox' },
+  webkit: { engine: 'webkit' },
+};
+
+/** Precedence: --browser CLI > manifest.browser > config.capture.browser > 'chrome'. */
+function resolveBrowser(args, manifest, config) {
+  const name =
+    args.browser || manifest.browser || (config.capture && config.capture.browser) || 'chrome';
+  const spec = BROWSERS[name];
+  if (!spec) {
+    throw new Error(
+      `Unknown browser "${name}". Valid values: ${Object.keys(BROWSERS).join(', ')}`
+    );
+  }
+  return { name, ...spec };
+}
+
 function resolveOutDir(args, manifestPath) {
   if (args['out-dir']) return path.resolve(args['out-dir']);
   return path.join(path.dirname(manifestPath), 'screenshots');
@@ -325,4 +346,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { resolveOutDir };
+module.exports = { resolveOutDir, resolveBrowser };
