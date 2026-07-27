@@ -26,7 +26,6 @@ figcaption { font-size: 0.85rem; color: #666; }
 nav { margin-bottom: 2rem; }
 nav a { text-decoration: none; }
 .badge { background: #b45309; color: #fff; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; vertical-align: middle; letter-spacing: 0.05em; }
-.badge::before { content: "DRAFT"; }
 ul.docs { list-style: none; padding: 0; }
 ul.docs li { padding: 0.5rem 0; border-bottom: 1px solid #ddd; }
 ul.docs time { color: #666; font-size: 0.85rem; float: right; }
@@ -36,7 +35,10 @@ code { background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const badge = (status) => (status === 'published' ? '' : ' <span class="badge"></span>');
+// Draftness here keys off meta.status (draft|approved|published); the
+// update-check sweep keys off meta.publish.url. SKILL.md sets both at publish
+// time, so they agree unless meta.json was hand-edited.
+const badge = (status) => (status === 'published' ? '' : ' <span class="badge">DRAFT</span>');
 
 function shell({ title, cssHref, nav, body }) {
   return `<!doctype html>
@@ -60,8 +62,6 @@ ${body}
 function buildSite({ docsDir, outDir, siteTitle = 'Docs' }) {
   const built = [];
   const skipped = [];
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, 'style.css'), CSS);
 
   const entries = fs.existsSync(docsDir)
     ? fs.readdirSync(docsDir, { withFileTypes: true }).filter((e) => e.isDirectory())
@@ -107,6 +107,13 @@ function buildSite({ docsDir, outDir, siteTitle = 'Docs' }) {
       date: ((meta.publish && meta.publish.publishedAt) || meta.createdAt || '').slice(0, 10),
     });
   }
+
+  // Zero docs built → write nothing at all; a caller-supplied outDir must not
+  // be polluted with a stylesheet and an empty index.
+  if (built.length === 0) return { outDir, built, skipped };
+
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.writeFileSync(path.join(outDir, 'style.css'), CSS);
 
   built.sort((a, b) => a.title.localeCompare(b.title));
   const items = built
