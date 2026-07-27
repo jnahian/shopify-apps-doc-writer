@@ -17,9 +17,9 @@
  *
  * Always exits 0 — a bootstrap must never break session start.
  *
- * Note: this installs the `playwright` npm package only. No browser download
- * is needed — login, capture, and verification all drive the system Google
- * Chrome (channel:'chrome' / CDP), so `npx playwright install` is never run.
+ * Note: this installs the `playwright` npm package only. The default engine
+ * (system Google Chrome, channel:'chrome' / CDP) needs no browser download;
+ * chromium/firefox/webkit download on demand at capture time, not here.
  */
 
 const { spawn } = require('child_process');

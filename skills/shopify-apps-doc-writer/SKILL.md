@@ -40,6 +40,7 @@ Write `docs/<slug>/manifest.json` per `references/manifest-schema.md`. Rules tha
 - **Selector policy:** prefer `data-testid` > aria-label / role > visible text. **Never** hashed Polaris class names — they change every release and silently break re-capture. Missing `data-testid` coverage in the app is a finding to report to the user, not a reason to use fragile selectors.
 - `waitFor` is required on every shot (Polaris skeleton loaders photobomb otherwise). Default strategy: network idle **and** selector visible.
 - Actions are read-only navigation **only** — `click`/`fill`/`select`/`hover`/`press` to reach a UI state, never to mutate store data. Never set `"mutation": true` on any shot; if a state can only be reached by mutating data, screenshot the state before it and note the limitation to the user.
+- Record the capture engine in the manifest's `browser` field whenever it isn't the default `chrome`, so re-capture reproduces the original rendering.
 
 **Gate 1:** present the manifest for approval — shot count, pages touched, every action listed, and an explicit statement that all actions are read-only. Iterate until the user approves. Do not run capture before approval.
 
