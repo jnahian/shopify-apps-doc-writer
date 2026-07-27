@@ -48,7 +48,7 @@ Beyond that, there's nothing to install by hand. The five writing skills ship wi
 
 Login, verification, and default capture all drive your installed **Google Chrome** — no separate browser download (`npx playwright install`) needed out of the box. You need Chrome installed and Node ≥ 20. Then in Claude Code, run `/docs-setup`.
 
-Other capture engines (`chromium`, `firefox`, `webkit`, `msedge`) can be selected per manifest, per config, or with `--browser` — **experimental**: only Chrome is validated end-to-end against a live admin. The three downloadable engines auto-install on first use; `msedge` needs a vendor install like Chrome.
+Other capture engines (`chromium`, `firefox`, `webkit`, `msedge`) can be selected per manifest, per config, or with `--browser`. The three downloadable engines auto-install on first use; `msedge` needs a vendor install like Chrome. Firefox and WebKit do work against a live admin (the saved Chrome session carries over), but their screenshots aren't byte-stable across repeat captures the way Chrome's are — **stick with `chrome` for any doc you'll re-check with `/update-docs` or `/docs-check`**, or you'll get drift reports for a UI that never changed.
 
 > **Upgrading from before multi-engine capture?** If `~/.config/shopify-apps-doc-writer/<app>.json` has `capture.browser: "chromium"` (the old, inert default that `/docs-setup` used to write), that value is now honored — it will trigger a one-time bundled-Chromium download and render with Chromium instead of Chrome. Delete the key to stay on Chrome.
 

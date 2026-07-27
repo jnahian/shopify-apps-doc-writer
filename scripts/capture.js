@@ -288,9 +288,10 @@ async function main() {
 
   // Capture loads an already-authenticated session, so the login-page
   // automation detection that forces CDP in setup-auth doesn't apply here.
-  // storageState is engine-portable JSON, but only chrome is validated
-  // end-to-end (2026-07-24) — whether Shopify accepts a Chrome-minted session
-  // in firefox/webkit is unverified; a rejected one surfaces as exit 10.
+  // storageState is engine-portable JSON and Shopify accepts a Chrome-minted
+  // session in firefox/webkit too (validated live 2026-07-27). Caveat: settle()
+  // only converges reliably on chrome — firefox/webkit re-encode enough of the
+  // frame between runs to trip /docs-check drift. See SPEC.md § Dependencies.
   const engine = playwright[spec.engine];
   const launchOpts = {
     headless: args.headed ? false : config.capture.headless !== false,
