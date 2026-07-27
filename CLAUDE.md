@@ -20,6 +20,7 @@ npm install                        # auto-runs on first session via hooks/ensure
 node scripts/setup-auth.js --app <key> [--store x.myshopify.com] [--handle <app-handle>]
 node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--headed]
 node scripts/build-site.js --app <key> [--out <dir>]   # docs/ → static site; deployed by /docs-deploy via npx wrangler
+node scripts/update-check.js --all --app <key>          # staleness sweep across all docs (/docs-check)
 ```
 
 ```bash

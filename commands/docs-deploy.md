@@ -58,6 +58,27 @@ First-run fallbacks:
 - Delete the build dir: `rm -rf <outDir>`.
 - Remind the user drafts are visible on the site with a DRAFT badge.
 
+## 5. Offer a Slack heads-up (optional, draft-only)
+
+After a successful deploy, offer once: "Post a review heads-up to Slack?"
+If declined, skip silently.
+
+1. Channel comes from per-user config `deploy.slackChannel`. If unset, ask
+   which channel to use, then save it under `deploy.slackChannel` in
+   `~/.config/shopify-apps-doc-writer/<app-key>.json` for next time (config
+   stays per-user and uncommitted).
+2. Compose and show the message before doing anything with it:
+
+   > Docs site updated: https://<pagesProject>.pages.dev — N docs
+   > (M drafts: <draft slugs>). Review when you get a chance.
+
+3. Deliver with the Slack MCP **draft** tool (`slack_send_message_draft`):
+   the message lands in the user's Slack drafts for that channel and they
+   send it themselves. Never use the direct-send Slack tool in this flow —
+   "never auto-send" is structural, not a promise.
+4. If no Slack MCP is connected, say so and print the message for manual
+   copy-paste — degraded, never broken.
+
 ## Notes
 
 - The site is a projection: canonical content stays `docs/<slug>/index.md`.
