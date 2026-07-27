@@ -12,7 +12,7 @@ const DEFAULTS = {
   capture: {
     mode: 'full-admin',
     outputDir: 'docs',
-    browser: 'chromium',
+    browser: 'chrome',
     headless: true,
   },
   publish: {

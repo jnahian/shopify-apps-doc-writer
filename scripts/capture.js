@@ -5,7 +5,7 @@
  * capture.js — executes a shot manifest deterministically.
  *
  * Usage:
- *   node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--headed]
+ *   node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--out-dir <dir>] [--browser chrome|msedge|chromium|firefox|webkit] [--headed]
  *
  * Per shot: navigate → run actions → apply wait strategy → screenshot
  * (viewport for crop "full-admin"; app-iframe bounding box for "iframe")
@@ -20,6 +20,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 const { loadConfig, parseArgs, resolveAppKey } = require('./lib/config');
 const {
   APP_IFRAME_SELECTOR,
@@ -233,7 +234,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.manifest) {
     console.error(
-      'Usage: node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--out-dir <dir>] [--headed]'
+      'Usage: node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--out-dir <dir>] [--browser chrome|msedge|chromium|firefox|webkit] [--headed]'
     );
     process.exit(1);
   }
@@ -269,31 +270,60 @@ async function main() {
   const outDir = resolveOutDir(args, manifestPath);
   fs.mkdirSync(outDir, { recursive: true });
 
-  let chromium;
+  let playwright;
   try {
-    ({ chromium } = require('playwright'));
+    playwright = require('playwright');
   } catch {
     console.error('Playwright is not installed. From the plugin root run:\n  npm install');
     process.exit(1);
   }
 
+  let spec;
+  try {
+    spec = resolveBrowser(args, manifest, config);
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
+
+  // Capture loads an already-authenticated session, so the login-page
+  // automation detection that forces CDP in setup-auth doesn't apply here —
+  // any engine works against the saved storageState (chrome validated
+  // 2026-07-24; storageState is engine-portable JSON).
+  const engine = playwright[spec.engine];
+  const launchOpts = {
+    headless: args.headed ? false : config.capture.headless !== false,
+  };
+  if (spec.channel) launchOpts.channel = spec.channel;
+
   let browser;
   try {
-    // Drive the system Google Chrome (channel:'chrome') — the same browser
-    // login uses — so no bundled-Chromium download is needed. Capture loads an
-    // already-authenticated session, so the login-page automation detection
-    // that forces CDP in setup-auth doesn't apply; output is identical to
-    // bundled Chromium (validated 2026-07-24).
-    browser = await chromium.launch({
-      channel: 'chrome',
-      headless: args.headed ? false : config.capture.headless !== false,
-    });
+    browser = await engine.launch(launchOpts);
   } catch (err) {
-    console.error(
-      `Could not launch Google Chrome: ${err.message}\n` +
-        'Capture uses your installed Google Chrome — install it from https://www.google.com/chrome/.'
-    );
-    process.exit(1);
+    if (spec.channel) {
+      // System browsers can't be auto-installed.
+      const vendorUrl =
+        spec.name === 'msedge'
+          ? 'https://www.microsoft.com/edge/'
+          : 'https://www.google.com/chrome/';
+      console.error(
+        `Could not launch ${spec.name}: ${err.message}\n` +
+          `Capture uses your installed browser — get it from ${vendorUrl}`
+      );
+      process.exit(1);
+    }
+    console.error(`${spec.name} is not installed — running: npx playwright install ${spec.name}`);
+    const install = spawnSync('npx', ['playwright', 'install', spec.name], { stdio: 'inherit' });
+    if (install.status !== 0) {
+      console.error(`playwright install ${spec.name} failed (exit ${install.status}).`);
+      process.exit(1);
+    }
+    try {
+      browser = await engine.launch(launchOpts);
+    } catch (err2) {
+      console.error(`Could not launch ${spec.name} after install: ${err2.message}`);
+      process.exit(1);
+    }
   }
 
   const viewport = manifest.viewport || config.viewport;
@@ -306,7 +336,7 @@ async function main() {
 
   console.log(
     `Capturing ${shots.length} shot(s) for "${manifest.feature}" ` +
-      `(${config.store}, viewport ${viewport.width}x${viewport.height})`
+      `(${config.store}, ${spec.name}, viewport ${viewport.width}x${viewport.height})`
   );
 
   try {
