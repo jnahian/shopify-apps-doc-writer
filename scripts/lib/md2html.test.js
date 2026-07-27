@@ -53,4 +53,31 @@ assert.ok(html.includes('docs/my-feature/screenshots/'), 'slug in the placeholde
 // Markup in prose must not become live HTML.
 assert.ok(mdToHtml('Use <script> tags', 'x').includes('&lt;script&gt;'), 'escapes raw HTML');
 
+// --- Site mode: real inline images, no document wrapper -------------------
+
+const site = mdToHtml(MD, 'my-feature', { images: 'inline', wrap: false });
+
+assert.ok(!site.startsWith('<html>'), 'wrap:false omits the <html><body> wrapper');
+assert.ok(!site.includes('[Screenshot:'), 'inline mode emits no placeholder markers');
+assert.ok(
+  site.includes(
+    '<figure><img src="screenshots/01-navigate.png" alt="a caption"><figcaption>a caption</figcaption></figure>'
+  ),
+  'inline mode emits a real <img> with figcaption'
+);
+// The numbering trap must hold in inline mode too.
+assert.strictEqual((site.match(/<ol>/g) || []).length, 1, 'inline image must not split the ordered list');
+
+// A standalone image is a bare <figure>, not nested inside <p>.
+const bare = mdToHtml('![cap](screenshots/02-x.png)', 'x', { images: 'inline' });
+assert.ok(bare.includes('<figure><img src="screenshots/02-x.png" alt="cap">'), 'standalone inline image');
+assert.ok(!bare.includes('<p><figure>'), 'figure must not be wrapped in <p>');
+
+// Quotes in captions must not break the alt attribute.
+const quoted = mdToHtml('!["hi"](screenshots/03-x.png)', 'x', { images: 'inline' });
+assert.ok(quoted.includes('alt="&quot;hi&quot;"'), 'quotes escaped in alt');
+
+// Defaults unchanged: no third argument behaves exactly as before.
+assert.strictEqual(mdToHtml(MD, 'my-feature'), html, 'default call unchanged by the new options');
+
 console.log('ok — mdToHtml keeps numbering intact and converts the template subset');
