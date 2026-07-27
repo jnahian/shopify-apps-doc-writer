@@ -313,7 +313,11 @@ async function main() {
       process.exit(1);
     }
     console.error(`${spec.name} is not installed — running: npx playwright install ${spec.name}`);
-    const install = spawnSync('npx', ['playwright', 'install', spec.name], { stdio: 'inherit' });
+    const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
+    const install = spawnSync('npx', ['playwright', 'install', spec.name], {
+      stdio: 'inherit',
+      cwd: pluginRoot,
+    });
     if (install.status !== 0) {
       console.error(`playwright install ${spec.name} failed (exit ${install.status}).`);
       process.exit(1);
