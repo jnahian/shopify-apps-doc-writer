@@ -28,7 +28,10 @@ const CHALLENGE_PAGE = `
 `;
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  // System Chrome, like the plugin itself: present on dev machines (the one
+  // required browser) and on GitHub's ubuntu runners — no bundled-Chromium
+  // download needed anywhere.
+  const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await browser.newPage();
   await page.setContent(PAGE);
 

@@ -9,7 +9,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      # Tests never launch a browser; skip Playwright's postinstall download.
+      # The one browser-using suite drives the runner's preinstalled system
+      # Chrome (channel:'chrome'), so Playwright's bundled download is dead weight.
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
     steps:
       - uses: actions/checkout@v4
