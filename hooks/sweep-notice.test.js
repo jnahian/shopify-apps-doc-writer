@@ -33,18 +33,22 @@ const driftResult = notice({
 assert.ok(driftResult && driftResult.includes('2 stale doc(s): ai-seo, img-opt'), `slugs listed: ${driftResult}`);
 assert.ok(driftResult && driftResult.includes('/update-docs') && driftResult.includes('/docs-check'), 'routes to both commands');
 assert.ok(driftResult && driftResult.includes('broken (selector-timeout)'), 'per-doc capture errors surfaced');
+assert.ok(driftResult && driftResult.includes('2026-08-13 03:00 UTC'), `displayed time is labeled UTC: ${driftResult}`);
 
 // Environment failures → their documented remedies.
 const authExpired = notice({ at: '2026-08-13T03:00:00Z', status: 'auth-expired' });
 assert.ok(authExpired && /docs-setup auth/.test(authExpired));
 const challenged = notice({ at: '2026-08-13T03:00:00Z', status: 'bot-challenge' });
 assert.ok(challenged && /bot-challenged/.test(challenged) && /docs-check/.test(challenged) && !/manifest/.test(challenged), 'exit-30 contract: no manifest blame');
+assert.ok(challenged && challenged.includes('2026-08-13 03:00 UTC'), `bot-challenge time is labeled UTC: ${challenged}`);
 const errorResult = notice({ at: '2026-08-13T03:00:00Z', status: 'error', message: 'boom' });
 assert.ok(errorResult && errorResult.includes('/logs/storeseo.sweep.log'), 'error points at the log');
+assert.ok(errorResult && errorResult.includes('2026-08-13 03:00 UTC'), `error time is labeled UTC: ${errorResult}`);
 
 // Stuck schedule: record older than 2 days wins over its own status.
 const stuckResult = notice({ at: '2026-08-10T03:00:00Z', status: 'ok', summary: { checked: 3, stale: [], errors: [], skipped: [] } });
 assert.ok(stuckResult && /stuck/.test(stuckResult) && /--status/.test(stuckResult), `stale record → stuck notice: ${stuckResult}`);
+assert.ok(stuckResult && stuckResult.includes('2026-08-10 03:00 UTC'), `stuck-record time is labeled UTC: ${stuckResult}`);
 
 // collectNotices: reads every *.sweep.json in a dir; no files → no notices.
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'notice-test-'));

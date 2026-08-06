@@ -63,7 +63,7 @@ node <plugin-root>/scripts/schedule-sweep.js --status --app <key>
 
 Show the output as-is: whether the job is installed and loaded, the last
 sweep result, and the log path. Route based on the last sweep status:
-- `auth-expired` → tell the user to run `/docs-setup auth` and re-enable the sweep
+- `auth-expired` → tell the user to run `/docs-setup auth` — the next scheduled sweep recovers on its own.
 - `drift` → route to `/update-docs <slug>` / `/docs-check` (for the full report + Slack draft)
 - `bot-challenge` → tell the user to run `/docs-check` themselves (headed capture); do not suggest touching the manifest
 - `error` → show the log path from the status output

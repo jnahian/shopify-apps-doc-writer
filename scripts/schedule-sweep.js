@@ -150,8 +150,12 @@ function status(appKey) {
   console.log(`plist:  ${fs.existsSync(plistPath(appKey)) ? plistPath(appKey) : 'not installed'}`);
   console.log(`loaded: ${loaded}`);
   if (fs.existsSync(sweepPath(appKey))) {
-    const record = JSON.parse(fs.readFileSync(sweepPath(appKey), 'utf8'));
-    console.log(`last sweep: ${record.at} — ${record.status}`);
+    try {
+      const record = JSON.parse(fs.readFileSync(sweepPath(appKey), 'utf8'));
+      console.log(`last sweep: ${record.at} — ${record.status}`);
+    } catch {
+      console.log(`last sweep: unreadable record (${sweepPath(appKey)})`);
+    }
   } else {
     console.log('last sweep: never ran');
   }

@@ -22,7 +22,7 @@ const STUCK_MS = 2 * 24 * 60 * 60 * 1000;
  * @returns {string|null} one notice line, or null for silence
  */
 function formatNotice({ appKey, record, logPath }, now) {
-  const when = String(record.at).slice(0, 16).replace('T', ' ');
+  const when = `${String(record.at).slice(0, 16).replace('T', ' ')} UTC`;
   const age = now - Date.parse(record.at);
   if (Number.isFinite(age) && age > STUCK_MS) {
     return (
