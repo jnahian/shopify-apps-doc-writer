@@ -23,6 +23,7 @@ const {
   loadConfig,
   saveConfig,
   parseArgs,
+  sweepPath,
 } = require('./config');
 
 assert.ok(CONFIG_DIR.startsWith(tmp), 'CONFIG_DIR is sandboxed under the temp HOME');
@@ -86,4 +87,29 @@ const merged = saveConfig('other', { publish: { target: 'google-docs' } });
 assert.strictEqual(merged.store, 'o.myshopify.com', 'existing fields survive a patch');
 assert.strictEqual(loadConfig('other').publish.target, 'google-docs', 'patch persisted');
 
-console.log('ok — config defaults merge, app-key resolution, arg parsing, and failure guidance');
+// sweepPath: sibling of configPath/authPath, one record per app.
+assert.strictEqual(
+  sweepPath('storeseo'),
+  path.join(CONFIG_DIR, 'storeseo.sweep.json'),
+  'sweepPath lives in CONFIG_DIR'
+);
+
+// Sweep records must not masquerade as app configs. After a scheduled sweep runs,
+// the sweep-result file lives in CONFIG_DIR alongside the app config. listAppKeys
+// must ignore *.sweep.json so resolveAppKey's single-config fallback still works.
+// Clear prior configs for a clean test.
+fs.rmSync(CONFIG_DIR, { recursive: true, force: true });
+saveConfig('storeseo', { store: 's.myshopify.com', appHandle: 'storeseo' });
+fs.writeFileSync(sweepPath('storeseo'), '{"at": "2026-08-07T03:00:00Z", "status": "ok"}');
+assert.deepStrictEqual(
+  listAppKeys(),
+  ['storeseo'],
+  'sweep.json excluded from listAppKeys'
+);
+assert.strictEqual(
+  resolveAppKey(),
+  'storeseo',
+  'single-config fallback still works when sweep.json is present'
+);
+
+console.log('ok — config defaults merge, app-key resolution, arg parsing, failure guidance, and sweep-record filtering');

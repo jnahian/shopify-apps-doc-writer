@@ -8,6 +8,21 @@ Notable changes to the `shopify-apps-doc-writer` plugin. Format follows
 `.claude-plugin/plugin.json` is bumped** — Claude Code uses that string as its
 update cache key, so merging to `main` alone ships nothing.
 
+## [0.6.0] - 2026-08-07
+
+### Added
+
+- `/docs-schedule` — a daily background staleness sweep on macOS (launchd),
+  fully local and report-only. Results surface as a one-line notice at your
+  next session start: stale docs route to `/update-docs`, auth expiry to
+  `/docs-setup auth`, bot challenges to a headed `/docs-check`. Nothing
+  publishes and nothing posts to Slack unattended. Backed by
+  `scripts/sweep.js` and `scripts/schedule-sweep.js`; the schedule survives
+  plugin updates via a plugin-root pointer the session-start hook refreshes.
+
+(0.4 annotation pipeline and 0.5 re-publish diffing remain queued; the
+version number tracks the roadmap item, not release order.)
+
 ## [0.3.0] - 2026-08-06
 
 ### Changed
