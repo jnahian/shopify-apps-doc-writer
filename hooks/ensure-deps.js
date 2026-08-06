@@ -20,6 +20,8 @@
  * Note: this installs the `playwright` npm package only. The default engine
  * (system Google Chrome, channel:'chrome' / CDP) needs no browser download;
  * chromium/firefox/webkit download on demand at capture time, not here.
+ *
+ * Also refreshes the plugin-root pointer for scheduled sweeps and prints any sweep notices (see hooks/sweep-notice.js).
  */
 
 const { spawn } = require('child_process');
@@ -27,6 +29,20 @@ const fs = require('fs');
 const path = require('path');
 
 const root = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
+
+// Scheduled-sweep support (0.6.0): keep the plugin-root pointer fresh so the
+// launchd shim survives version-numbered plugin-path changes, and surface the
+// latest sweep results as session context. Best-effort — never break startup.
+try {
+  const { CONFIG_DIR } = require('../scripts/lib/config');
+  fs.mkdirSync(CONFIG_DIR, { recursive: true });
+  fs.writeFileSync(path.join(CONFIG_DIR, 'plugin-root'), root + '\n');
+  for (const line of require('./sweep-notice').collectNotices(CONFIG_DIR, Date.now())) {
+    console.log(line);
+  }
+} catch {
+  /* hook must always exit 0 with no drama */
+}
 
 // Already installed? Nothing to do — this is every session after the first.
 try {

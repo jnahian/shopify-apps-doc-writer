@@ -18,6 +18,7 @@ const {
   CONFIG_DIR,
   expandHome,
   authPath,
+  sweepPath,
   listAppKeys,
   resolveAppKey,
   loadConfig,
@@ -51,6 +52,8 @@ assert.throws(() => resolveAppKey(), /No config found .*docs-setup/, 'no configs
 saveConfig('storeseo', { store: 's.myshopify.com', appHandle: 'storeseo' });
 fs.writeFileSync(authPath('storeseo'), '{}');
 assert.deepStrictEqual(listAppKeys(), ['storeseo'], 'auth.json excluded from app keys');
+fs.writeFileSync(sweepPath('storeseo'), '{}');
+assert.deepStrictEqual(listAppKeys(), ['storeseo'], 'sweep.json excluded from app keys');
 assert.strictEqual(resolveAppKey(), 'storeseo', 'single config resolves without --app');
 
 // Two configs → must be explicit.
@@ -85,5 +88,12 @@ assert.throws(() => loadConfig('bare'), /missing required field "appHandle"/, 'm
 const merged = saveConfig('other', { publish: { target: 'google-docs' } });
 assert.strictEqual(merged.store, 'o.myshopify.com', 'existing fields survive a patch');
 assert.strictEqual(loadConfig('other').publish.target, 'google-docs', 'patch persisted');
+
+// sweepPath: sibling of configPath/authPath, one record per app.
+assert.strictEqual(
+  sweepPath('storeseo'),
+  path.join(CONFIG_DIR, 'storeseo.sweep.json'),
+  'sweepPath lives in CONFIG_DIR'
+);
 
 console.log('ok — config defaults merge, app-key resolution, arg parsing, and failure guidance');
