@@ -15,6 +15,7 @@
  *   0  success
  *   10 auth expired — run /docs-setup auth
  *   20 selector timeout — UI likely changed; the manifest needs updating
+ *   30 bot challenge — the browser was interstitialed; re-run with --headed
  *   1  anything else (including read-only-guarantee refusal)
  */
 
@@ -26,12 +27,14 @@ const {
   APP_IFRAME_SELECTOR,
   adminUrl,
   isLoginUrl,
+  detectBotChallenge,
   findInPageOrIframe,
   applyWaitStrategy,
 } = require('./lib/shopify');
 
 const EXIT_AUTH = 10;
 const EXIT_SELECTOR = 20;
+const EXIT_CHALLENGE = 30;
 
 const ACTION_TIMEOUT_MS = 15000;
 const WAITFOR_TIMEOUT_MS = 30000;
@@ -372,6 +375,20 @@ async function main() {
       process.exit(EXIT_AUTH);
     }
     if (err.code === 'SELECTOR_TIMEOUT') {
+      // Every selector times out on a bot interstitial too, and blaming the
+      // manifest for that sends the user to fix something that isn't broken.
+      // Classified here rather than at each throw site so it covers all three
+      // (action resolve, waitFor, iframe crop).
+      if (await detectBotChallenge(page)) {
+        console.error(
+          `${err.message}\nThat page is a bot challenge, not the admin (${page.url()}) — the manifest is fine.` +
+            (launchOpts.headless
+              ? `\nHeadless ${spec.name} gets challenged on some stores; re-run with --headed.`
+              : `\n${spec.name} was challenged even headed — wait and re-run, or try another store session.`)
+        );
+        await browser.close();
+        process.exit(EXIT_CHALLENGE);
+      }
       console.error(
         `${err.message}\nThe UI has likely changed — update the manifest (and re-approve it), then re-run.` +
           `\nRe-shoot just this shot with: --only <shot-id>`

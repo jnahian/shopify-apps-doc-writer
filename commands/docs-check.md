@@ -17,6 +17,7 @@ node <plugin-root>/scripts/update-check.js --all --app <key>
 Parse the JSON on stdout: `{ docs, skipped, checked, anyDrift }`.
 
 - Exit `10`: auth expired — run `/docs-setup auth`, then re-run.
+- Exit `30`: the browser was bot-challenged, so the sweep aborted (every doc would fail the same way). Re-run the capture headed rather than touching any manifest.
 - Exit `1`: show the error verbatim and stop.
 
 ## 2. Present the results

@@ -85,7 +85,7 @@ skills/shopify-apps-doc-writer/         orchestrator SKILL.md + references/
   references/publish-targets.md        local · google-docs · generic mcp
 skills/vendored/                     pinned writing skills (see VERSIONS.md)
 scripts/setup-auth.js                real-Chrome CDP login → storageState + verification shot
-scripts/capture.js                   manifest → numbered PNGs (exit 10 auth / 20 selector)
+scripts/capture.js                   manifest → numbered PNGs (exit 10 auth / 20 selector / 30 bot challenge)
 scripts/update-check.js              drift detector for /update-docs (--all: sweep for /docs-check)
 scripts/build-site.js                docs/ → static site for /docs-deploy (Cloudflare Pages)
 scripts/lib/                         config + Shopify admin helpers

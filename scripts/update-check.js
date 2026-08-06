@@ -10,8 +10,9 @@
  * and a machine-readable JSON report to stdout.
  *
  * Exit codes: 0 success (drift or not); 10 auth expired; 20 selector timeout
- * (UI changed — fix manifest); 1 other errors. In --all sweep mode, selector
- * timeouts are per-doc report entries, not exit 20.
+ * (UI changed — fix manifest); 30 bot challenge (re-run with --headed);
+ * 1 other errors. In --all sweep mode, selector timeouts are per-doc report
+ * entries, not exit 20.
  */
 
 const fs = require('fs');
@@ -28,6 +29,7 @@ const {
 
 const EXIT_AUTH = 10;
 const EXIT_SELECTOR = 20;
+const EXIT_CHALLENGE = 30;
 
 /** Re-shoot by invoking capture.js so it remains the only screenshotter. */
 function realCapture({ manifestPath, appKey, outDir }) {
@@ -41,6 +43,11 @@ function realCapture({ manifestPath, appKey, outDir }) {
   if (res.status === EXIT_AUTH) {
     const e = new Error('Session expired — run /docs-setup auth, then re-run.');
     e.exitCode = EXIT_AUTH;
+    throw e;
+  }
+  if (res.status === EXIT_CHALLENGE) {
+    const e = new Error('Bot challenge — the browser was interstitialed; re-run with capture --headed.');
+    e.exitCode = EXIT_CHALLENGE;
     throw e;
   }
   if (res.status === EXIT_SELECTOR) {
@@ -109,8 +116,9 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory, sweep = 
  * Sweep every doc dir under docsDir. Report-only: temp capture dirs are
  * deleted immediately after each comparison. Doc-local failures are contained:
  * missing/malformed files skip the doc, a selector timeout or capture crash
- * becomes that doc's `error`, and the sweep continues. Only auth expiry (10)
- * aborts — every subsequent doc would fail identically.
+ * becomes that doc's `error`, and the sweep continues. Auth expiry (10) and a
+ * bot challenge (30) abort — both are environment-level, so every subsequent
+ * doc would fail identically.
  */
 function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
   const docs = [];
@@ -140,9 +148,9 @@ function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
     try {
       report = run({ manifestPath: path.join(dir, 'manifest.json'), appKey, capture, tmpFactory, sweep: true });
     } catch (err) {
-      // exitCode 10 (auth) and unexpected errors abort; anything else from
-      // capture is doc-local and must not kill the sweep.
-      if (err.exitCode === EXIT_AUTH || !err.exitCode) throw err;
+      // exitCode 10 (auth), 30 (bot challenge) and unexpected errors abort;
+      // anything else from capture is doc-local and must not kill the sweep.
+      if (err.exitCode === EXIT_AUTH || err.exitCode === EXIT_CHALLENGE || !err.exitCode) throw err;
       docs.push({
         slug: e.name,
         published: null,

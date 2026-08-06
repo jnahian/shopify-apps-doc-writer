@@ -65,5 +65,6 @@ Update `docs/$1/meta.json`:
 
 - If `update-check.js` exits `10`, auth expired — run `/docs-setup auth` and retry.
 - If it exits `20`, a selector no longer resolves: the UI changed structurally and the **manifest** needs updating (re-approve it via `/write-docs`) before `/update-docs` can work.
+- If it exits `30`, the browser hit a bot challenge instead of the admin. Nothing is wrong with the manifest — re-run the capture with `--headed`.
 - This command never mutates the admin: all captures go through `capture.js`, which enforces the read-only guarantee.
 - A doc published before `publishedHash` was recorded (or recorded with a different hash method) will report copy drift on its first run even if the text never changed. That's expected — re-publishing records the pinned hash and the false positive disappears.
