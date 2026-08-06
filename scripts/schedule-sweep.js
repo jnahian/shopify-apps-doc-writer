@@ -29,6 +29,13 @@ function xmlEscape(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** Validate app key: must start with alphanumeric, then alphanumeric/dot/underscore/dash. @param {string} appKey */
+function assertSafeAppKey(appKey) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(appKey)) {
+    throw new Error(`App key "${appKey}" contains characters unsafe for launchd artifacts — use letters, digits, dot, underscore, dash.`);
+  }
+}
+
 /** @param {string} appKey */
 function label(appKey) {
   return `com.shopify-apps-doc-writer.sweep.${appKey}`;
@@ -56,7 +63,11 @@ function parseAt(at) {
   return { hour: Number(m[1]), minute: Number(m[2]) };
 }
 
-/** @param {{appKey: string, hour: number, minute: number}} opts */
+/**
+ * Generate launchd plist XML. Invariant: appKey is pre-validated by
+ * assertSafeAppKey() at the CLI boundary and is not re-escaped here.
+ * @param {{appKey: string, hour: number, minute: number}} opts
+ */
 function plistContent({ appKey, hour, minute }) {
   // StartCalendarInterval: launchd runs a missed interval on wake (laptop
   // asleep overnight still sweeps); intervals missed while powered off skip.
@@ -82,7 +93,11 @@ function plistContent({ appKey, hour, minute }) {
 `;
 }
 
-/** @param {{appKey: string, docsRepo: string, nodePath: string}} opts */
+/**
+ * Generate shell shim script. Invariant: appKey is pre-validated by
+ * assertSafeAppKey() at the CLI boundary and is not re-escaped here.
+ * @param {{appKey: string, docsRepo: string, nodePath: string}} opts
+ */
 function shimContent({ appKey, docsRepo, nodePath }) {
   const pointer = path.join(CONFIG_DIR, 'plugin-root');
   return `#!/bin/sh
@@ -159,11 +174,8 @@ function main() {
     process.exit(1);
   }
   const appKey = resolveAppKey(/** @type {string|undefined} */ (typeof args.app === 'string' ? args.app : undefined));
-  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(appKey)) {
-    console.error(`App key "${appKey}" contains characters unsafe for launchd artifacts — use letters, digits, dot, underscore, dash.`);
-    process.exit(1);
-  }
   try {
+    assertSafeAppKey(appKey);
     if (args.install) install({ appKey, at: typeof args.at === 'string' ? args.at : '03:00', docsRepo: process.cwd() });
     else if (args.uninstall) uninstall(appKey);
     else status(appKey);
@@ -175,4 +187,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { parseAt, plistContent, shimContent, label, plistPath, shimPath, logPath };
+module.exports = { parseAt, plistContent, shimContent, label, plistPath, shimPath, logPath, shq, xmlEscape, assertSafeAppKey };
