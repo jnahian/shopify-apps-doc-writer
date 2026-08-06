@@ -374,12 +374,17 @@ Landed before 0.3 (dev-only, no release needed): `npm test` over the
 self-check suites, GitHub Actions CI (typecheck + tests), and a TDD rule for
 JS changes in CLAUDE.md.
 
-### 0.3 — Vendor the writing skills
-Unfinished v1 work that is also a quality item: the writing phase currently
-runs on the doc-template fallback. Run `scripts/vendor-skills.sh` pinned to
-current upstream, re-apply the description de-emphasis (see
-`skills/vendored/VERSIONS.md`), verify `/write-docs` invokes all five skills
-explicitly and that none trigger on unrelated prompts.
+### 0.3 — Vendor the writing skills: verify + close out
+Re-scoped 2026-08-06: the original premise was stale — the five skills were
+vendored, de-emphasized, and shipped in 0.2.0 (see
+`docs/superpowers/specs/2026-08-06-vendor-writing-skills-design.md`). Actual
+scope: re-pin to current upstream (content no-op), verify the wiring — the
+vendored skills are unregistered reference files one directory too deep for
+skill discovery, so they *cannot* auto-trigger, and the writing phase reads
+four of them while `product-marketing` is wired through `/docs-setup` ("all
+five in /write-docs" was never the design) — and fix the followability gaps:
+`<plugin-root>`-qualified paths and an explicit read-and-follow mechanism in
+SKILL.md §4.
 
 ### 0.4 — Annotation pipeline
 Optional per-shot `annotate` list in the manifest (highlight rects, arrows,
