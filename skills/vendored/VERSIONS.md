@@ -1,8 +1,8 @@
 # Vendored from coreyhaines31/marketingskills
 
 - Upstream: https://github.com/coreyhaines31/marketingskills
-- Commit: c21a984a56da10fb6085e6334f6f60929220a4da
-- Date: 2026-07-23
+- Commit: 7868cb9251fad80a73d26e488a5ad5f6c4a9f335
+- Date: 2026-08-06
 - Skills: product-marketing, copywriting, copy-editing, ai-seo, content-strategy
 - Local modifications: each SKILL.md `description:` is prefixed with "Internal writing aid for shopify-apps-doc-writer; invoked explicitly by its orchestrator, not auto-triggered." Upstream descriptions are broad ("when the user wants to write marketing copy") and would auto-fire on unrelated tasks. Content is otherwise unmodified.
 
