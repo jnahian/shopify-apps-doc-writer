@@ -54,7 +54,8 @@ console.log(
 );
 
 // shell:true so `npm` resolves to npm.cmd on Windows.
-const child = spawn('npm', ['install', '--no-audit', '--no-fund'], {
+// --omit=dev: users only need playwright; typescript/@types are for repo work.
+const child = spawn('npm', ['install', '--omit=dev', '--no-audit', '--no-fund'], {
   cwd: root,
   detached: true,
   stdio: 'ignore',
