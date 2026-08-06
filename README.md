@@ -16,7 +16,14 @@ Built for [StoreSEO](https://apps.shopify.com/storeseo); multi-app capable by de
                        → optional Slack heads-up (draft-only, never auto-sent)
 /docs-check            re-shoot every manifest → report which docs went stale
                        (report-only: writes nothing, needs no gates)
+/docs-schedule         daily background sweep (launchd) → notice at your next session
 ```
+
+`/docs-schedule` (macOS) runs that same sweep daily in the background via
+launchd — no Claude session involved. It only reports: results are saved
+locally and surface as a one-line notice at your next session start. Nothing
+publishes and nothing posts to Slack unattended; the draft-only Slack path
+still happens through `/docs-check`, with you present.
 
 **Key principle:** discovery is interactive and adaptive (Claude browses the live feature, reads code and ClickUp); capture is deterministic (`scripts/capture.js` executes a versioned JSON **shot manifest**). The manifest is the contract between the two — re-running it after a UI change regenerates every screenshot in a doc.
 
@@ -89,7 +96,7 @@ Multiple apps = multiple config files; commands accept `--app <key>`.
 
 ```
 .claude-plugin/plugin.json           plugin manifest
-commands/                            /docs-setup · /write-docs · /update-docs · /docs-deploy · /docs-check
+commands/                            /docs-setup · /write-docs · /update-docs · /docs-deploy · /docs-check · /docs-schedule
 skills/shopify-apps-doc-writer/         orchestrator SKILL.md + references/
   references/doc-template.md           canonical doc structure
   references/manifest-schema.md        shot manifest schema + selector policy
@@ -98,6 +105,8 @@ skills/vendored/                     pinned writing skills (see VERSIONS.md)
 scripts/setup-auth.js                real-Chrome CDP login → storageState + verification shot
 scripts/capture.js                   manifest → numbered PNGs (exit 10 auth / 20 selector / 30 bot challenge)
 scripts/update-check.js              drift detector for /update-docs (--all: sweep for /docs-check)
+scripts/sweep.js                     unattended sweep runner for /docs-schedule (launchd)
+scripts/schedule-sweep.js            install/uninstall/status of the launchd job (macOS)
 scripts/build-site.js                docs/ → static site for /docs-deploy (Cloudflare Pages)
 scripts/lib/                         config + Shopify admin helpers
 ```
