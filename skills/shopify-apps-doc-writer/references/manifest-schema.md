@@ -49,6 +49,7 @@ The shot manifest is the contract between adaptive discovery and deterministic c
 | `crop` | no | `"full-admin"` (default; full viewport — context/navigation shots showing where the feature lives) or `"iframe"` (crops to the app iframe bounding box — feature detail) |
 | `caption` | yes | Used as the image alt/caption in the doc |
 | `driftCheck` | no | Set `false` to exclude this shot from `/update-docs` drift comparison. The shot is still re-shot, but reported as "not compared (volatile)" instead of changed. Use it for shots whose pixels nobody controls — host-app chrome, third-party widgets that render intermittently — which otherwise report drift on an unchanged feature. Prefer `crop: "iframe"` first; reach for this when a `full-admin` context shot proves unstable |
+| `annotate` | no | Ordered list of annotations drawn onto this shot at capture time — see [Annotations](#annotations). Default `[]` |
 | `mutation` | no | **Forbidden in v1.** `capture.js` refuses destructive-looking actions unless this is `true`, and the orchestrator must never set it |
 
 ## Actions (v1)
@@ -63,6 +64,28 @@ The shot manifest is the contract between adaptive discovery and deterministic c
 | `waitMs` | `{ "waitMs": 500 }` | Last resort, discouraged. Prefer `waitFor` |
 
 Selectors in actions and `waitFor` are resolved first against the admin page, then inside the embedded app iframe — write them the same way regardless of frame.
+
+## Annotations
+
+Optional per-shot `annotate` array. Each annotation anchors to a **selector** (same policy and frame transparency as `waitFor` and actions) and is drawn as a browser overlay just before the screenshot — the annotated PNG is the artifact. Determinism holds: an unchanged UI with an unchanged `annotate` list re-captures byte-identical, so `/docs-check` reports no phantom drift. If a target moves, disappears, or ends up outside the viewport, capture fails with exit `20` instead of drawing a misplaced or missing box. Entries are drawn in order, back-to-front.
+
+```json
+"annotate": [
+  { "type": "highlight", "target": "[data-testid='sov-score']" },
+  { "type": "arrow", "target": "[data-testid='add-keyword']", "side": "left" },
+  { "type": "blur", "target": "[data-testid='store-email']", "fill": "#1a1a1a" }
+]
+```
+
+| Type | Knobs (default) | Renders as |
+|---|---|---|
+| `highlight` | `color` (`#d72c0d`), `strokeWidth` (3), `radius` (6), `padding` (4) | Rounded rectangle around the target |
+| `arrow` | `color` (`#d72c0d`), `strokeWidth` (3), `side` (`"left"`), `length` (56), `gap` (8) | Arrow pointing at the midpoint of the target's given side, tip `gap` px away |
+| `blur` | `padding` (0), `blur` (12), `fill` (none) | Frosted blur over the target; setting `fill` makes it an opaque redaction box instead |
+
+All types also take `offset: {x, y}` (px, default 0/0) to nudge the anchored position; `padding` grows the box beyond the element's bounds. Every knob is optional — a bare annotation renders in the house style (Polaris critical red, so annotations read as documentation ink, not app UI).
+
+Annotation targets follow the selector policy but are **exempt from the destructive-pattern check** — they are measured, never interacted with, so highlighting a "Save" button is fine.
 
 ## Selector policy (enforced)
 

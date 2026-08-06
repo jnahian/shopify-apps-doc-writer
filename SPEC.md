@@ -18,7 +18,7 @@ A Claude Code plugin that writes merchant-facing feature documentation for embed
 - Per-user config; team conventions live in the plugin itself (SKILL.md), not in shared config.
 
 ### Non-Goals (v1)
-- Screenshot annotation (arrows, highlight boxes, blur/redaction) → **0.4 on the v2 roadmap (§13)**.
+- Screenshot annotation (arrows, highlight boxes, blur/redaction) → **shipped in 0.4.0 (§13)**.
 - `/update-docs` re-publish *diffing* against a live external doc → **0.5 on the v2 roadmap (§13)**. (Staleness detection + re-shoot + in-place re-publish shipped.)
 - Automated publishing without human confirmation → never.
 - Managing/seeding dev store demo data → manual checklist item only; deferred, uncommitted (§13).
@@ -386,13 +386,15 @@ five in /write-docs" was never the design) — and fix the followability gaps:
 `<plugin-root>`-qualified paths and an explicit read-and-follow mechanism in
 SKILL.md §4.
 
-### 0.4 — Annotation pipeline
-Optional per-shot `annotate` list in the manifest (highlight rects, arrows,
-blur/redaction boxes), applied by a post-process step after capture.
-Constraints fixed now: annotations must be **deterministic on re-capture** —
-an unchanged UI re-annotated must stay byte-stable, or `/docs-check` reports
-phantom drift on every annotated doc. Whether coordinates are raw pixels or
-selector-anchored is the central design question, deferred to its brainstorm.
+### 0.4 — Annotation pipeline (shipped in 0.4.0)
+Optional per-shot `annotate` list in the manifest: highlight rects, arrows,
+and blur/redaction boxes. Resolved at design time (see
+`docs/superpowers/specs/2026-08-06-annotation-pipeline-design.md`):
+**selector-anchored, not raw pixels**, drawn as an in-browser overlay
+injected before the screenshot — determinism on re-capture is inherited from
+the settle() loop rather than re-implemented in a post-process encoder, and
+a moved or missing target fails capture (exit 20) instead of silently
+drawing a misplaced box.
 
 ### 0.5 — External re-publish diffing
 Before gate 3 on a re-publish, fetch the live external doc and diff both
