@@ -70,4 +70,11 @@ assert.deepStrictEqual(
   { type: 'arrow', tip: { x: 120, y: 192 }, tail: { x: 120, y: 136 }, color: '#d72c0d', strokeWidth: 3 }
 );
 
+// arrows honor round-the-box-first like highlight/blur: fractional box is
+// rounded before the midpoint is taken.
+assert.deepStrictEqual(
+  resolveGeometry({ x: 100, y: 200.4, width: 40, height: 20.4 }, { type: 'arrow', target: '#x' }),
+  { type: 'arrow', tip: { x: 92, y: 210 }, tail: { x: 36, y: 210 }, color: '#d72c0d', strokeWidth: 3 }
+);
+
 console.log('ok — resolveGeometry');

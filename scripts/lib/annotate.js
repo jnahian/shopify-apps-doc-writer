@@ -112,8 +112,12 @@ function resolveGeometry(box, ann) {
     const length = Math.round(ann.length !== undefined ? ann.length : 56);
     const gap = Math.round(ann.gap !== undefined ? ann.gap : 8);
     const { dx, dy } = AXIS[side];
-    const midX = box.x + (dx === 0 ? box.width / 2 : dx === 1 ? box.width : 0);
-    const midY = box.y + (dy === 0 ? box.height / 2 : dy === 1 ? box.height : 0);
+    const bx = Math.round(box.x);
+    const by = Math.round(box.y);
+    const bw = Math.round(box.width);
+    const bh = Math.round(box.height);
+    const midX = bx + (dx === 0 ? bw / 2 : dx === 1 ? bw : 0);
+    const midY = by + (dy === 0 ? bh / 2 : dy === 1 ? bh : 0);
     const tip = { x: Math.round(midX + dx * gap) + ox, y: Math.round(midY + dy * gap) + oy };
     const tail = { x: tip.x + dx * length, y: tip.y + dy * length };
     return { type: 'arrow', tip, tail, color, strokeWidth };
