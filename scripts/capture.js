@@ -492,8 +492,8 @@ async function main() {
     if (err.code === 'SELECTOR_TIMEOUT') {
       // Every selector times out on a bot interstitial too, and blaming the
       // manifest for that sends the user to fix something that isn't broken.
-      // Classified here rather than at each throw site so it covers all three
-      // (action resolve, waitFor, iframe crop).
+      // Classified here rather than at each throw site so it covers all five
+      // (action resolve, waitFor, iframe crop, annotation resolve/off-viewport).
       if (await detectBotChallenge(page)) {
         console.error(
           `${err.message}\nThat page is a bot challenge, not the admin (${page.url()}) — the manifest is fine.` +
