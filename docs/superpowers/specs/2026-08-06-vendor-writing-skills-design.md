@@ -49,11 +49,16 @@ regressed.
 - [x] No auto-trigger possible: vendored skills absent from the registered
       skill index (confirmed live; see Context).
 - [x] De-emphasis prefix present in all five descriptions.
-- [ ] Path audit: every `skills/vendored/*` reference in SKILL.md,
+- [x] Path audit: every `skills/vendored/*` reference in SKILL.md,
       `commands/*.md`, and `references/*` points at an existing file.
-- [ ] Followability: writing-phase instructions work for a fresh reader in a
+- [x] Followability: writing-phase instructions work for a fresh reader in a
       docs-repo worktree (the two known gaps above, plus anything else the
       pass turns up).
+
+Audit note: one extra stale passage beyond the known gaps — CLAUDE.md's
+cheat-sheet comment claimed the de-emphasis must be re-applied manually
+after a re-pin (the script does it idempotently); fixed with the CLAUDE.md
+corrections.
 
 ### Fixes
 
