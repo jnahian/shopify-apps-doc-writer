@@ -63,6 +63,7 @@ node <plugin-root>/scripts/capture.js --manifest docs/<slug>/manifest.json --app
 - Exit `0`: show the captured screenshots inline for a quick visual sanity check (skeletons? wrong page? personal data visible?). Re-shoot individual shots with `--only <shot-id>` after fixing the manifest.
 - Exit `10` (auth expired): tell the user to run `/docs-setup auth`, then retry.
 - Exit `20` (selector timeout): the script reports which shot/selector — the UI likely changed; fix the manifest, re-approve the changed shots (gate 1 applies to changes), re-run.
+- Exit `30` (bot challenge): the browser landed on a "verify your connection" interstitial, not the admin. The manifest is fine — do not change it. Re-run the same command with `--headed`.
 - If the browser is missing: `chromium`/`firefox`/`webkit` auto-install on first use (one-time download — the script handles it); for `chrome`/`msedge` the script prints a vendor-install link — relay it.
 
 ## 4. Writing

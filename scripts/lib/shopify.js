@@ -39,6 +39,36 @@ function isLoginUrl(url) {
   );
 }
 
+/**
+ * True when a page looks like a Cloudflare-style bot interstitial rather than
+ * the admin. Headless Chrome gets challenged on some stores; the page then has
+ * no admin markup at all, so every selector times out and the failure reads as
+ * "the UI changed" unless it's classified.
+ *
+ * Deliberately strict: this runs only *after* a shot already failed, and a
+ * false positive would send the user chasing a bot challenge when the UI really
+ * did change — the same wrong-diagnosis bug, inverted. So it matches on the
+ * challenge markup itself, never on the "Just a moment..." title alone.
+ */
+const CHALLENGE_MARKER =
+  /connection needs to be verified|verify(ing)? you are human|checking your browser|cf-browser-verification|challenge-(running|form)|checking_browser|_cf_chl/i;
+
+function isBotChallenge(html) {
+  return CHALLENGE_MARKER.test(html || '');
+}
+
+/** Read the live page's markup and classify it. Never throws. */
+async function detectBotChallenge(page) {
+  try {
+    const html = await page.evaluate(() =>
+      document.body ? document.body.innerHTML.slice(0, 4000) : ''
+    );
+    return isBotChallenge(html);
+  } catch {
+    return false;
+  }
+}
+
 /** True when the URL is an authenticated admin page. */
 function isAdminUrl(url) {
   if (isLoginUrl(url)) return false;
@@ -109,6 +139,8 @@ module.exports = {
   appUrl,
   isLoginUrl,
   isAdminUrl,
+  isBotChallenge,
+  detectBotChallenge,
   findInPageOrIframe,
   applyWaitStrategy,
 };

@@ -186,6 +186,18 @@ assert.throws(
   'auth expiry aborts the sweep'
 );
 
+// A bot challenge (30) is environment-level like auth: abort, don't blame docs.
+const captureChallenge = () => {
+  const e = new Error('bot challenge');
+  e.exitCode = 30;
+  throw e;
+};
+assert.throws(
+  () => runAll({ docsDir: docsRoot, appKey: 'x', capture: captureChallenge }),
+  (e) => e.exitCode === 30,
+  'bot challenge aborts the sweep'
+);
+
 // Single-doc semantics untouched: unpublished doc without sweep → no capture.
 fs.writeFileSync(path.join(doc, 'meta.json'), JSON.stringify({ slug: 'demo', publish: {} }));
 r = run({ manifestPath, appKey: 'x', capture: () => assert.fail('must not capture') });
