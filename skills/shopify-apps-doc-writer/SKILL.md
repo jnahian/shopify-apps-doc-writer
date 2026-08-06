@@ -18,9 +18,15 @@ Produce a complete merchant-facing feature doc: prose + real, consistent screens
 ## 0. Preflight
 
 1. Resolve the app config: `~/.config/shopify-apps-doc-writer/<app-key>.json`. Honor `--app <key>`; with no flag, use the single config if exactly one exists, otherwise ask. **If no config exists, stop** and tell the user to run `/docs-setup` first.
-2. Read product context if present, per app: `.agents/<app-key>.product-marketing.md` in the repo, else `~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`. (A legacy un-keyed `.agents/product-marketing.md` from a single-app setup is an acceptable fallback — offer to rename it to the app-keyed name.) If missing, warn once ("docs will lack shared positioning/tone grounding — `/docs-setup context` fixes this") and proceed.
-3. If ambiguous, ask (one round, concrete options): **audience** (merchant-facing vs internal) and **doc type** (new doc vs rewrite of an existing one). Default: merchant-facing, new.
-4. Derive `<feature-slug>` (kebab-case). If `docs/<slug>/` already exists and this isn't a rewrite, ask before overwriting.
+2. **Workspace — isolate the work in a git worktree** (preflight confirmation; separate from the three gates). Derive `<feature-slug>` (kebab-case) first — the branch is named after it. Docs land in the *working directory's* repo, so keep the user's checkout untouched:
+   - Not a git repo → work in place, say so once, move on.
+   - Already isolated (`git rev-parse --git-dir` ≠ `--git-common-dir` **and** `git rev-parse --show-superproject-working-tree` prints nothing — a non-empty result means a submodule, not a worktree) → stay here, say which branch, move on.
+   - `docs/` not tracked here (`git check-ignore -q docs`, or `git ls-files docs/` is empty) → a worktree buys nothing: the output would be untracked files in a throwaway directory. Say so and work in place. (This is the case in the plugin's own repo, where `docs/*` is gitignored.)
+   - Otherwise **ask once**, with both defaults filled in: base branch (default the repo's default branch — `git symbolic-ref --short refs/remotes/origin/HEAD` minus the `origin/` prefix, so the worktree bases on the *local* branch, not a possibly stale remote ref; fall back to the current branch if that local branch doesn't exist) and branch/worktree name (default `docs/<feature-slug>`). The user may decline — then work in place.
+   - On approval: verify the worktree dir is ignored (`git check-ignore -q .worktrees`; if not, append `.worktrees/` to `.gitignore` and commit that one line), then `git worktree add .worktrees/<branch> -b <branch> <base>`. **Every step below runs with that worktree as the working directory** — including `docs/<slug>/` paths.
+3. Read product context if present, per app: `.agents/<app-key>.product-marketing.md` in the repo, else `~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`. (A legacy un-keyed `.agents/product-marketing.md` from a single-app setup is an acceptable fallback — offer to rename it to the app-keyed name.) If missing, warn once ("docs will lack shared positioning/tone grounding — `/docs-setup context` fixes this") and proceed.
+4. If ambiguous, ask (one round, concrete options): **audience** (merchant-facing vs internal) and **doc type** (new doc vs rewrite of an existing one). Default: merchant-facing, new.
+5. If `docs/<slug>/` already exists and this isn't a rewrite, ask before overwriting.
 
 ## 1. Discovery
 
@@ -46,11 +52,13 @@ Write `docs/<slug>/manifest.json` per `references/manifest-schema.md`. Rules tha
 
 ## 3. Capture
 
-Run from the plugin root:
+Run from the docs repo (the worktree from §0.2 — `capture.js` resolves `--manifest` and the output dir against the *current* directory), invoking the script by absolute path:
 
 ```
-node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key>
+node <plugin-root>/scripts/capture.js --manifest docs/<slug>/manifest.json --app <key>
 ```
+
+`<plugin-root>` is this skill's directory two levels up — the one holding `.claude-plugin/`.
 
 - Exit `0`: show the captured screenshots inline for a quick visual sanity check (skeletons? wrong page? personal data visible?). Re-shoot individual shots with `--only <shot-id>` after fixing the manifest.
 - Exit `10` (auth expired): tell the user to run `/docs-setup auth`, then retry.
@@ -87,7 +95,7 @@ Only if config `publish.target` is not `local` and the user wants to publish. Fo
 ## 7. Wrap-up
 
 1. Write/refresh `docs/<slug>/meta.json`: title, slug, app, audience, status (`draft` | `approved` | `published`), createdAt, `contentHash` (sha256 hex of the raw index.md bytes — `shasum -a 256 index.md`), and on publish: target, url, publishedAt, `publishedHash`.
-2. Summarize: output paths, shot count, discovery sources used, publish URL if any, and any findings (e.g. missing `data-testid` coverage).
+2. Summarize: the worktree path and branch if one was created (the user can't guess either), absolute output paths, shot count, discovery sources used, publish URL if any, and any findings (e.g. missing `data-testid` coverage). The doc is uncommitted on that branch — say so, and leave committing and merging to the user.
 
 ## Output contract
 

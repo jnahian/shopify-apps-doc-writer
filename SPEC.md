@@ -228,7 +228,7 @@ Frontmatter description must be "pushy" for reliable triggering, e.g.:
 
 Body must cover:
 
-1. **Preflight:** load config (fail with pointer to `/docs-setup` if missing); read `product-marketing.md` if present; ask which audience (merchant / internal) and doc type (new / rewrite) if ambiguous.
+1. **Preflight:** load config (fail with pointer to `/docs-setup` if missing); **confirm an isolated workspace** — ask once for base branch + worktree name (default `docs/<feature-slug>`), create `.worktrees/<branch>`, and run everything from there (skip if already in a worktree, not a git repo, or the user declines); read `product-marketing.md` if present; ask which audience (merchant / internal) and doc type (new / rewrite) if ambiguous.
 2. **Discovery phase:** gather feature understanding from (in preference order) the feature's ClickUp task/spec, the relevant code/PR, and interactive browsing of the live feature (Playwright MCP / claude-in-chrome). Derive the step-by-step flow from what was actually observed, not assumptions.
 3. **Manifest authoring:** produce the shot manifest per §6; present it for approval — **gate #1**. Show shot count, pages touched, and any destructive-looking actions (there should be none; read-only navigation only — never actions that mutate store data).
 4. **Capture:** run `scripts/capture.js --manifest docs/<slug>/manifest.json --app <key>`. On auth-expiry exit code, direct user to `/docs-setup auth`. Show the captured screenshots inline for a quick visual sanity check.
@@ -344,6 +344,8 @@ All external targets: gate #3 (explicit confirmation with a precise summary of w
 | 1 | Before capture | The shot manifest: shot list, pages, actions |
 | 2 | Before anything leaves local | The full draft doc |
 | 3 | Before external publish | Exact summary of writes to the external target |
+
+`/write-docs` and `/update-docs` also open with a **preflight worktree confirmation** (base branch + worktree name). It is a separate confirmation, not a fourth gate — declining it just means working in place.
 
 No gate may be auto-approved. Publishing never happens in the same breath as drafting.
 

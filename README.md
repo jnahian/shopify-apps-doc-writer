@@ -8,9 +8,10 @@ Built for [StoreSEO](https://apps.shopify.com/storeseo); multi-app capable by de
 
 ```
 /docs-setup            one-time wizard: auth → publish target → product context
-/write-docs <feature>  discover → shot manifest (gate 1) → capture → write
-                       → review draft (gate 2) → publish (gate 3, optional)
-/update-docs           detect copy/screenshot drift → re-shoot → re-publish (gate 3)
+/write-docs <feature>  worktree → discover → shot manifest (gate 1) → capture
+                       → write → review draft (gate 2) → publish (gate 3, optional)
+/update-docs           worktree → detect copy/screenshot drift → re-shoot
+                       → re-publish (gate 3)
 /docs-deploy           build internal docs site → confirm → Cloudflare Pages URL
                        → optional Slack heads-up (draft-only, never auto-sent)
 /docs-check            re-shoot every manifest → report which docs went stale
@@ -38,6 +39,8 @@ docs/<feature-slug>/
 | 3 | Before external publish | Exact summary of writes to the external target |
 
 No gate is ever auto-approved. Capture is read-only — the manifest never contains actions that mutate store data, and `capture.js` refuses destructive-looking actions.
+
+`/write-docs` and `/update-docs` open with a **preflight confirmation** that is not one of the three: before writing anything they ask for a base branch and a worktree name (default `docs/<feature-slug>`) and do all work in `.worktrees/<branch>`, so your checkout stays untouched. Decline it, or already be in a worktree, and they work in place.
 
 `/docs-deploy` has its own confirmation gate of the same kind, separate from the three above: it publishes a *projection* of `docs/` to a Cloudflare Pages URL (viewable by anyone with the link) and never touches `meta.json` — per-doc publish records keep their existing meaning.
 

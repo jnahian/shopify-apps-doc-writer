@@ -42,7 +42,9 @@ The whole design rests on one split:
 
 `docs/<slug>/manifest.json` is the contract between the two, and the reproducibility guarantee: re-running it after a UI change regenerates every screenshot. Never bypass `capture.js` with ad-hoc browser screenshots.
 
-**Three hard gates**, none skippable or auto-approvable: (1) manifest before capture, (2) draft before anything leaves local, (3) exact summary of external writes before publish. They're stated in `commands/write-docs.md`, SKILL.md, and `references/publish-targets.md` — keep those consistent. `/docs-deploy` has its own confirmation gate, modeled on gate 3 but separate from these three: it publishes a *projection* of `docs/` to a Cloudflare Pages URL and never touches `meta.json`.
+**Three hard gates**, none skippable or auto-approvable: (1) manifest before capture, (2) draft before anything leaves local, (3) exact summary of external writes before publish. They're stated in `commands/write-docs.md`, SKILL.md, and `references/publish-targets.md` — keep those consistent. `/write-docs` and `/update-docs` also open with a **preflight worktree confirmation** (base branch + worktree name → `.worktrees/<branch>`), stated in SKILL.md §0.2 and echoed in both command files — separate from the three gates, and skippable, unlike them. Consequence: cwd is the docs repo, not the plugin root, so every command invokes its script as `<plugin-root>/scripts/…`. `capture.js`, `update-check.js`, and `build-site.js` all resolve manifests and `outputDir` against cwd; the cheat-sheet above assumes the dogfood case where the two directories coincide.
+
+`/docs-deploy` has its own confirmation gate, modeled on gate 3 but separate from these three: it publishes a *projection* of `docs/` to a Cloudflare Pages URL and never touches `meta.json`.
 
 **Output contract** — always produced regardless of publish target; publishing is a projection of it:
 

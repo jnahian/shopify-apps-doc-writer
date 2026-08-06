@@ -5,12 +5,18 @@ argument-hint: <feature-slug>
 
 Refresh the published doc at `docs/$1/`. Follow these steps exactly; the gates are non-skippable.
 
+## 0. Isolate the work
+
+This command overwrites screenshots and rewrites `meta.json`, so do it in a git worktree — same preflight confirmation as `/write-docs` (see §0.2 of the `shopify-apps-doc-writer` skill): ask once for the base branch (default the repo's default branch, local not `origin/…`) and the branch/worktree name (default `docs/$1-update`), then `git worktree add .worktrees/<branch> -b <branch> <base>` and run everything below from there. Already in a worktree, not a git repo, or the user declines → work in place and say so.
+
+**Only if `docs/$1/` is tracked** (`git ls-files --error-unmatch docs/$1` succeeds). A worktree contains tracked content only — if this doc isn't committed, a fresh worktree wouldn't have the manifest, screenshots, or `meta.json` to compare against. In that case say so and work in place.
+
 ## 1. Detect drift
 
-Run:
+Run from the docs repo (`update-check.js` resolves paths against the current directory), with `<plugin-root>` the directory holding `.claude-plugin/`:
 
 ```bash
-node scripts/update-check.js --manifest docs/$1/manifest.json --app <key>
+node <plugin-root>/scripts/update-check.js --manifest docs/$1/manifest.json --app <key>
 ```
 
 Parse the JSON printed on stdout.

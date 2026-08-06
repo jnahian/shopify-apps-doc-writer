@@ -8,10 +8,10 @@ Pages. Follow these steps exactly; the confirmation gate is non-skippable.
 
 ## 1. Build
 
-Run:
+Run from the docs repo (the script resolves `docs/` against the current directory), with `<plugin-root>` the directory holding `.claude-plugin/`:
 
 ```bash
-node scripts/build-site.js --app <key>
+node <plugin-root>/scripts/build-site.js --app <key>
 ```
 
 Parse the JSON printed on stdout: `{ outDir, built, skipped, pagesProject }`.
