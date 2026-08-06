@@ -48,8 +48,8 @@ function validateAnnotations(annotate) {
     }
     if (typeof ann.target !== 'string' || !ann.target) return `${at} is missing "target"`;
     for (const knob of NUMERIC_KNOBS) {
-      if (ann[knob] !== undefined && typeof ann[knob] !== 'number') {
-        return `${at}.${knob} must be a number`;
+      if (ann[knob] !== undefined && !Number.isFinite(ann[knob])) {
+        return `${at}.${knob} must be a finite number`;
       }
     }
     if (ann.side !== undefined && !SIDES.includes(ann.side)) {
@@ -59,12 +59,15 @@ function validateAnnotations(annotate) {
       if (ann[str] !== undefined && typeof ann[str] !== 'string') {
         return `${at}.${str} must be a string`;
       }
+      if (ann[str] !== undefined && /["<>]/.test(ann[str])) {
+        return `${at}.${str} contains characters not allowed in a color`;
+      }
     }
     if (ann.offset !== undefined) {
       if (typeof ann.offset !== 'object' || ann.offset === null) return `${at}.offset must be {x, y}`;
       for (const axis of ['x', 'y']) {
-        if (ann.offset[axis] !== undefined && typeof ann.offset[axis] !== 'number') {
-          return `${at}.offset.${axis} must be a number`;
+        if (ann.offset[axis] !== undefined && !Number.isFinite(ann.offset[axis])) {
+          return `${at}.offset.${axis} must be a finite number`;
         }
       }
     }
@@ -208,4 +211,21 @@ function arrowHtml(g) {
   );
 }
 
-module.exports = { validateAnnotations, resolveGeometry, overlayHtml };
+/**
+ * True if any part of the box lies inside the viewport. An off-viewport
+ * target cannot be honestly annotated — position:fixed overlays outside the
+ * visual viewport silently vanish from viewport screenshots — so capture
+ * must fail loudly instead.
+ * @param {Box} box
+ * @param {{width: number, height: number}} viewport
+ */
+function boxInViewport(box, viewport) {
+  return (
+    box.x + box.width > 0 &&
+    box.y + box.height > 0 &&
+    box.x < viewport.width &&
+    box.y < viewport.height
+  );
+}
+
+module.exports = { validateAnnotations, resolveGeometry, overlayHtml, boxInViewport };

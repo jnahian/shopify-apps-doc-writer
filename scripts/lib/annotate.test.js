@@ -4,7 +4,7 @@
 /** Self-check for lib/annotate.js. Run: node scripts/lib/annotate.test.js */
 
 const assert = require('assert');
-const { validateAnnotations, resolveGeometry, overlayHtml } = require('./annotate');
+const { validateAnnotations, resolveGeometry, overlayHtml, boxInViewport } = require('./annotate');
 
 assert.strictEqual(validateAnnotations(undefined), null, 'absent annotate is fine');
 assert.strictEqual(
@@ -20,10 +20,22 @@ assert.match(validateAnnotations({}) || '', /must be an array/);
 assert.match(validateAnnotations([null]) || '', /annotate\[0\] is not an object/);
 assert.match(validateAnnotations([{ type: 'circle', target: '#x' }]) || '', /unknown type "circle"/);
 assert.match(validateAnnotations([{ type: 'blur' }]) || '', /missing "target"/);
-assert.match(validateAnnotations([{ type: 'arrow', target: '#x', length: '56' }]) || '', /length must be a number/);
+assert.match(validateAnnotations([{ type: 'arrow', target: '#x', length: '56' }]) || '', /length must be a finite number/);
 assert.match(validateAnnotations([{ type: 'arrow', target: '#x', side: 'up' }]) || '', /side must be one of/);
 assert.match(validateAnnotations([{ type: 'highlight', target: '#x', color: 3 }]) || '', /color must be a string/);
-assert.match(validateAnnotations([{ type: 'highlight', target: '#x', offset: { x: '1' } }]) || '', /offset\.x must be a number/);
+assert.match(validateAnnotations([{ type: 'highlight', target: '#x', offset: { x: '1' } }]) || '', /offset\.x must be a finite number/);
+
+// Fix 2: NaN/Infinity are typeof 'number' but not finite — must be rejected.
+assert.match(validateAnnotations([{ type: 'highlight', target: '#x', strokeWidth: NaN }]) || '', /strokeWidth must be a finite number/);
+assert.match(validateAnnotations([{ type: 'highlight', target: '#x', offset: { y: Infinity } }]) || '', /offset\.y must be a finite number/);
+
+// Fix 3: color/fill strings must not break out of the innerHTML attribute.
+assert.match(
+  validateAnnotations([{ type: 'blur', target: '#x', fill: '"><script>' }]) || '',
+  /fill contains characters not allowed in a color/
+);
+assert.strictEqual(validateAnnotations([{ type: 'highlight', target: '#x', color: '#1a2b3c' }]), null);
+assert.strictEqual(validateAnnotations([{ type: 'blur', target: '#x', fill: 'rgb(1,2,3)' }]), null);
 
 console.log('ok — validateAnnotations');
 
@@ -118,3 +130,24 @@ assert.strictEqual((html.match(/position:fixed/g) || []).length, 4);
 assert.match(html, /<svg style="position:fixed;left:27px;top:201px" width="74" height="18"/);
 
 console.log('ok — overlayHtml');
+
+// --- boxInViewport ---
+
+const viewport = { width: 1280, height: 800 };
+
+// Fully inside.
+assert.strictEqual(boxInViewport({ x: 100, y: 100, width: 50, height: 50 }, viewport), true);
+
+// Partially overlapping an edge.
+assert.strictEqual(boxInViewport({ x: 1260, y: 100, width: 50, height: 50 }, viewport), true);
+
+// Entirely below the fold.
+assert.strictEqual(boxInViewport({ x: 100, y: 900, width: 50, height: 50 }, viewport), false);
+
+// Entirely to the right.
+assert.strictEqual(boxInViewport({ x: 1300, y: 100, width: 50, height: 50 }, viewport), false);
+
+// Entirely above/left (negative coords, box fully out of view).
+assert.strictEqual(boxInViewport({ x: -100, y: -100, width: 50, height: 50 }, viewport), false);
+
+console.log('ok — boxInViewport');

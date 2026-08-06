@@ -789,6 +789,17 @@ Write `<scratchpad>/annotate-verify/manifest.json` (substitute the discovered se
         { "type": "arrow", "target": "SEL_A", "side": "bottom" },
         { "type": "blur", "target": "SEL_B" }
       ]
+    },
+    {
+      "id": "02-annotated-iframe",
+      "path": "/admin/apps/storeseo",
+      "waitFor": "SEL_A",
+      "crop": "iframe",
+      "caption": "annotation determinism probe (iframe crop)",
+      "annotate": [
+        { "type": "highlight", "target": "SEL_A" },
+        { "type": "blur", "target": "SEL_B" }
+      ]
     }
   ]
 }
@@ -804,9 +815,10 @@ From the plugin root:
 node scripts/capture.js --manifest <scratchpad>/annotate-verify/manifest.json --app storeseo --out-dir <scratchpad>/annotate-verify/run1
 node scripts/capture.js --manifest <scratchpad>/annotate-verify/manifest.json --app storeseo --out-dir <scratchpad>/annotate-verify/run2
 shasum -a 256 <scratchpad>/annotate-verify/run1/01-annotated.png <scratchpad>/annotate-verify/run2/01-annotated.png
+shasum -a 256 <scratchpad>/annotate-verify/run1/02-annotated-iframe.png <scratchpad>/annotate-verify/run2/02-annotated-iframe.png
 ```
 
-Expected: both captures exit 0; the two sha256 hashes are **identical**.
+Expected: both captures exit 0; the two sha256 hashes are **identical** for each shot (full-admin pair and iframe pair).
 - Exit 10 → auth expired: pause and ask the user to run `/docs-setup auth`, then re-run.
 - Exit 30 → bot challenge: re-run the same commands with `--headed`.
 - Hashes differ → this is a bug in the feature's core promise. Do not rationalize it away (e.g. "the page is just dynamic"): first re-run the same manifest **without** `annotate` twice to check whether the base page itself settles byte-stable. If the base is stable but annotated runs differ, the overlay is nondeterministic — debug before proceeding (suspect fractional coordinates or `backdrop-filter` sampling; try the solid-`fill` variant to isolate).
@@ -814,6 +826,8 @@ Expected: both captures exit 0; the two sha256 hashes are **identical**.
 - [ ] **Step 4: Visual sanity check**
 
 Open `run1/01-annotated.png` and confirm: rounded red rectangle around SEL_A, arrow below it pointing up at it, frosted blur over SEL_B, nothing overlapping illegibly. Show the screenshot to the user in the session.
+
+Also open `run1/02-annotated-iframe.png` and confirm the highlight on SEL_A and blur on SEL_B both appear correctly in the iframe-cropped shot too.
 
 - [ ] **Step 5: Record the result**
 

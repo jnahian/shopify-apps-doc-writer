@@ -67,7 +67,7 @@ Selectors in actions and `waitFor` are resolved first against the admin page, th
 
 ## Annotations
 
-Optional per-shot `annotate` array. Each annotation anchors to a **selector** (same policy and frame transparency as `waitFor` and actions) and is drawn as a browser overlay just before the screenshot — the annotated PNG is the artifact. Determinism holds: an unchanged UI with an unchanged `annotate` list re-captures byte-identical, so `/docs-check` reports no phantom drift. If a target moves or disappears, capture fails with exit `20` instead of drawing a misplaced box. Entries are drawn in order, back-to-front.
+Optional per-shot `annotate` array. Each annotation anchors to a **selector** (same policy and frame transparency as `waitFor` and actions) and is drawn as a browser overlay just before the screenshot — the annotated PNG is the artifact. Determinism holds: an unchanged UI with an unchanged `annotate` list re-captures byte-identical, so `/docs-check` reports no phantom drift. If a target moves, disappears, or ends up outside the viewport, capture fails with exit `20` instead of drawing a misplaced or missing box. Entries are drawn in order, back-to-front.
 
 ```json
 "annotate": [

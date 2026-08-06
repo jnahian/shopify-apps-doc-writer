@@ -32,7 +32,7 @@ const {
   findInPageOrIframe,
   applyWaitStrategy,
 } = require('./lib/shopify');
-const { validateAnnotations, resolveGeometry, overlayHtml } = require('./lib/annotate');
+const { validateAnnotations, resolveGeometry, overlayHtml, boxInViewport } = require('./lib/annotate');
 
 const EXIT_AUTH = 10;
 const EXIT_SELECTOR = 20;
@@ -191,12 +191,20 @@ const OVERLAY_ID = '__sadw_annotations';
 async function applyAnnotations(page, shot) {
   /** @type {import('./lib/annotate').Geometry[]} */
   const geometries = [];
+  const viewport = page.viewportSize();
   for (const ann of shot.annotate || []) {
     const loc = await findInPageOrIframe(page, ann.target, ACTION_TIMEOUT_MS);
     const box = loc && (await loc.boundingBox());
     if (!box) {
       const err = /** @type {CodedError} */ (
         new Error(`annotation target never became visible: ${ann.target}`)
+      );
+      err.code = 'SELECTOR_TIMEOUT';
+      throw err;
+    }
+    if (viewport && !boxInViewport(box, viewport)) {
+      const err = /** @type {CodedError} */ (
+        new Error(`annotation target is outside the viewport: ${ann.target}`)
       );
       err.code = 'SELECTOR_TIMEOUT';
       throw err;
