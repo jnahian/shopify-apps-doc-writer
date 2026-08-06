@@ -11,6 +11,8 @@ one-line notice when you next start a session. Nothing is ever published or
 sent to Slack unattended; you act on a notice by running `/update-docs
 <slug>` or `/docs-check` yourself.
 
+Argument given: **$ARGUMENTS** — empty means install (or replace); `off` means uninstall; `status` means inspect the schedule. `--app` and `--at` pass through to the script.
+
 macOS only (launchd). On other platforms the script refuses with a clear
 message — tell the user Linux cron support is deferred.
 
@@ -38,7 +40,9 @@ message — tell the user Linux cron support is deferred.
    node <plugin-root>/scripts/schedule-sweep.js --install --app <key> --at <HH:MM>
    ```
 
-   Then verify: run `--status` and show the user the output. Mention that
+   If the script exits nonzero (invalid `--at` format, unsafe app key, or `launchctl bootstrap` failure): show its stderr verbatim and stop — do not retry or edit files by hand.
+
+   On success: run `--status` and show the user the output. Mention that
    re-running `/docs-schedule` any time replaces the schedule (one per app),
    and `/docs-schedule off` removes it.
 
@@ -58,9 +62,12 @@ node <plugin-root>/scripts/schedule-sweep.js --status --app <key>
 ```
 
 Show the output as-is: whether the job is installed and loaded, the last
-sweep result, and the log path. If the last sweep is `auth-expired`, route to
-`/docs-setup auth`; if `drift`, route to `/update-docs <slug>` /
-`/docs-check`.
+sweep result, and the log path. Route based on the last sweep status:
+- `auth-expired` → tell the user to run `/docs-setup auth` and re-enable the sweep
+- `drift` → route to `/update-docs <slug>` / `/docs-check` (for the full report + Slack draft)
+- `bot-challenge` → tell the user to run `/docs-check` themselves (headed capture); do not suggest touching the manifest
+- `error` → show the log path from the status output
+- `ok` or `never ran` → nothing to do
 
 ## Notes
 
