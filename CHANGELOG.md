@@ -55,7 +55,7 @@ this release delivers it all at once.
 - `update-check.js` keeps `capture.js`'s progress output off its JSON stdout,
   and no longer leaks temp directories.
 
-## [0.1.0]
+## [0.1.0] - 2026-07-23
 
 Initial plugin: `/docs-setup`, `/write-docs`, the orchestrator skill, and the
 deterministic `capture.js` manifest runner.
