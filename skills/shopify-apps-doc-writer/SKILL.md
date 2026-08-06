@@ -68,14 +68,14 @@ node <plugin-root>/scripts/capture.js --manifest docs/<slug>/manifest.json --app
 
 ## 4. Writing
 
-Follow `references/doc-template.md` for structure. Invoke the vendored skills **explicitly** (never rely on auto-triggering), in this order:
+Follow `references/doc-template.md` for structure. The vendored writing skills are **reference files, not registered skills** — they have no Skill-tool name and never auto-trigger. Apply each one by reading its SKILL.md and following it, in this order:
 
-1. `skills/vendored/content-strategy` — structure decisions: section order, what deserves a heading, FAQ selection.
-2. `skills/vendored/copywriting` — the draft.
-3. `skills/vendored/copy-editing` — polish pass.
-4. `skills/vendored/ai-seo` — LLM-citability: headings phrased as questions where natural, self-contained sections, schema-friendly structure.
+1. `<plugin-root>/skills/vendored/content-strategy/SKILL.md` — structure decisions: section order, what deserves a heading, FAQ selection.
+2. `<plugin-root>/skills/vendored/copywriting/SKILL.md` — the draft.
+3. `<plugin-root>/skills/vendored/copy-editing/SKILL.md` — polish pass.
+4. `<plugin-root>/skills/vendored/ai-seo/SKILL.md` — LLM-citability: headings phrased as questions where natural, self-contained sections, schema-friendly structure.
 
-If a vendored skill directory has no SKILL.md (not yet vendored — see `skills/vendored/VERSIONS.md`), note it once and apply the doc template plus the tone rules below with your own judgment.
+If a vendored SKILL.md is missing (broken install — see `<plugin-root>/skills/vendored/VERSIONS.md`), note it once and apply the doc template plus the tone rules below with your own judgment.
 
 Embed screenshots by relative path with their manifest captions: `![<caption>](screenshots/01-navigate.png)`. Numbered steps reference numbered screenshots. Write to `docs/<slug>/index.md`.
 

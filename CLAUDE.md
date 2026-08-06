@@ -14,8 +14,8 @@ A **Claude Code plugin** (`shopify-apps-doc-writer`), not an application. Most o
 npm install                        # auto-runs on first session via hooks/ensure-deps.js
 ./scripts/vendor-skills.sh [sha]   # MAINTENANCE ONLY: re-pin skills/vendored/ to newer upstream.
                                    # The 5 skills are committed and ship with the plugin — this is
-                                   # not an install step, and it OVERWRITES the description
-                                   # de-emphasis (re-apply it afterward, see vendored/VERSIONS.md).
+                                   # not an install step. The script re-applies the description
+                                   # de-emphasis itself (idempotent; see vendored/VERSIONS.md).
 
 node scripts/setup-auth.js --app <key> [--store x.myshopify.com] [--handle <app-handle>]
 node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--headed]
@@ -33,7 +33,7 @@ The suites are plain `assert` scripts (no framework — `node --test` just runs 
 
 **JS changes follow TDD.** For any change to `scripts/` or `hooks/`: write the failing test first — a plain `assert` script named `<module>.test.js` beside its module, which `node --test` auto-discovers — watch it fail, then implement. `npm test` and `npm run typecheck` must both pass before commit. Markdown changes have no runner and are exempt; verify capture-affecting ones by running a real capture against a manifest.
 
-`skills/vendored/` currently holds only `VERSIONS.md` — the skills are not vendored yet. SKILL.md handles this gracefully (falls back to the doc template), so don't assume those directories exist.
+`skills/vendored/` holds the five writing skills, pinned in its `VERSIONS.md`; they shipped with the plugin since 0.2.0. They are deliberately **not** registered skills — one directory too deep for plugin skill discovery — so they can never auto-trigger; the orchestrator reads each `SKILL.md` directly by `<plugin-root>`-qualified path. SKILL.md still degrades gracefully (doc-template fallback) if one is missing from a broken install.
 
 ## Architecture
 
