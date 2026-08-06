@@ -330,6 +330,11 @@ All external targets: gate #3 (explicit confirmation with a precise summary of w
 - `--only` enables re-capturing a single stale shot without a full run.
 - Read-only guarantee: script refuses manifests containing actions against elements matching submit/destructive patterns unless a `"mutation": true` flag is set on the shot — and the SKILL.md forbids Claude from setting that flag in v1.
 
+### `scripts/sweep.js` / `scripts/schedule-sweep.js` (0.6.0)
+Unattended daily staleness sweep: `schedule-sweep.js` manages the launchd
+job (macOS), `sweep.js` runs `update-check.js --all` and persists
+`<app-key>.sweep.json` for the SessionStart notice. Report-only.
+
 ### Dependencies
 - `playwright` (npm package only — no browser download for the default path). Login and verification drive the **system Google Chrome** (CDP for login, `channel:'chrome'` for verify); capture defaults to Chrome too, so `npx playwright install` is never needed out of the box. Non-default engines (`chromium`/`firefox`/`webkit` via config, manifest, or `--browser`) auto-install on first use. Validated live 2026-07-27: session portability **holds** — a Chrome-minted `storageState` is accepted by both firefox and webkit (no exit 10). But `settle()` **does not converge reliably** off Chrome: repeat captures of the same unchanged admin pages were byte-identical 2/2 on Chrome, 1/2 on firefox, 1/2 on webkit. So a doc captured on firefox/webkit will show phantom drift in `/docs-check` — **use `chrome` for anything `/update-docs` will re-check.** `npm install` auto-runs on first session via `hooks/ensure-deps.js`.
 - **Google Chrome** installed — the only browser required, since login, verification, and default capture all use it; other engines install on demand.
@@ -400,12 +405,14 @@ directions: what the re-push changes, and any manual edits made directly in
 the external doc that a re-push would clobber. Google Docs is the committed
 target; generic MCP targets best-effort.
 
-### 0.6 — Scheduled staleness sweeps
-Run `/docs-check` on a schedule after app releases; report through the
-existing draft-only Slack path. Sweeps only **report** — they never publish
-(the no-unconfirmed-publishing rule in §1 stands). Known constraint: auth
-state is per-user and never shared, so CI can't hold it — likely a locally
-scheduled agent rather than GitHub Actions. Decided at design time.
+### 0.6 — Scheduled staleness sweeps — SHIPPED as 0.6.0
+Fixed daily schedule (not release-triggered), macOS launchd, fully local:
+a shim + plugin-root pointer file survive version-numbered plugin updates;
+`scripts/sweep.js` wraps `update-check.js --all` and persists a classified
+record; the SessionStart hook surfaces it as a notice. Slack stays
+human-gated via `/docs-check`. See
+`docs/superpowers/specs/2026-08-07-scheduled-sweeps-design.md`. 0.4
+(annotation) and 0.5 (re-publish diffing) remain queued.
 
 ### Deferred (uncommitted)
 Listed so they aren't forgotten; no ordering, no commitment. Each re-enters
