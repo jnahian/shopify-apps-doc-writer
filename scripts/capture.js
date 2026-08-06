@@ -7,7 +7,8 @@
  * Usage:
  *   node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--out-dir <dir>] [--browser chrome|msedge|chromium|firefox|webkit] [--headed]
  *
- * Per shot: navigate → run actions → apply wait strategy → screenshot
+ * Per shot: navigate → run actions → apply wait strategy → inject
+ * annotations (if any) → screenshot
  * (viewport for crop "full-admin"; app-iframe bounding box for "iframe")
  * → save docs/<slug>/screenshots/<id>.png next to the manifest.
  *
@@ -31,6 +32,7 @@ const {
   findInPageOrIframe,
   applyWaitStrategy,
 } = require('./lib/shopify');
+const { validateAnnotations, resolveGeometry, overlayHtml } = require('./lib/annotate');
 
 const EXIT_AUTH = 10;
 const EXIT_SELECTOR = 20;
@@ -47,6 +49,7 @@ const EXIT_CHALLENGE = 30;
  * @typedef {{
  *   id: string, path: string, waitFor: string, waitStrategy?: string,
  *   crop?: string, actions?: Action[], mutation?: boolean, driftCheck?: boolean,
+ *   annotate?: import('./lib/annotate').Annotation[],
  * }} Shot
  * @typedef {{
  *   app: string, feature: string, browser?: string,
@@ -129,6 +132,8 @@ function validateManifest(manifest, manifestPath) {
     if (shot.crop && !['full-admin', 'iframe'].includes(shot.crop)) {
       fail(`shot "${shot.id}" has unknown crop "${shot.crop}"`);
     }
+    const annErr = validateAnnotations(shot.annotate);
+    if (annErr) fail(`shot "${shot.id}": ${annErr}`);
   }
 }
 
@@ -171,6 +176,47 @@ async function runAction(page, action) {
   }
 }
 
+const OVERLAY_ID = '__sadw_annotations';
+
+/**
+ * Resolve each annotation's target to a live bounding box and inject the
+ * overlay into the top document. Runs before settle() so the overlay is part
+ * of the render that must stabilise — determinism comes from the same
+ * mechanism as the rest of the shot. Fixed-position children clip into
+ * `crop: "iframe"` shots too, because element screenshots clip the full page
+ * render.
+ * @param {Page} page
+ * @param {Shot} shot
+ */
+async function applyAnnotations(page, shot) {
+  /** @type {import('./lib/annotate').Geometry[]} */
+  const geometries = [];
+  for (const ann of shot.annotate || []) {
+    const loc = await findInPageOrIframe(page, ann.target, ACTION_TIMEOUT_MS);
+    const box = loc && (await loc.boundingBox());
+    if (!box) {
+      const err = /** @type {CodedError} */ (
+        new Error(`annotation target never became visible: ${ann.target}`)
+      );
+      err.code = 'SELECTOR_TIMEOUT';
+      throw err;
+    }
+    geometries.push(resolveGeometry(box, ann));
+  }
+  await page.evaluate(
+    ({ id, html }) => {
+      const prev = document.getElementById(id);
+      if (prev) prev.remove();
+      const el = document.createElement('div');
+      el.id = id;
+      el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647';
+      el.innerHTML = html;
+      document.body.appendChild(el);
+    },
+    { id: OVERLAY_ID, html: overlayHtml(geometries) }
+  );
+}
+
 /**
  * @param {Page} page
  * @param {import('./lib/config').AppConfig} config
@@ -196,6 +242,10 @@ async function captureShot(page, config, shot, outDir) {
     const err = /** @type {CodedError} */ (new Error('redirected to login'));
     err.code = 'AUTH_EXPIRED';
     throw err;
+  }
+
+  if (shot.annotate && shot.annotate.length) {
+    await applyAnnotations(page, shot);
   }
 
   const file = path.join(outDir, `${shot.id}.png`);
@@ -469,4 +519,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { resolveOutDir, resolveBrowser };
+module.exports = { resolveOutDir, resolveBrowser, checkReadOnly, validateManifest };
