@@ -142,4 +142,70 @@ function resolveGeometry(box, ann) {
   return g;
 }
 
-module.exports = { validateAnnotations, resolveGeometry };
+/**
+ * Render geometries to the innerHTML of the overlay container. Elements in
+ * array order (drawn back-to-front), all position:fixed so page layout never
+ * shifts. Deterministic: identical input → identical string.
+ * @param {Geometry[]} geometries
+ * @returns {string}
+ */
+function overlayHtml(geometries) {
+  return geometries.map(geometryHtml).join('');
+}
+
+/** @param {Geometry} g */
+function geometryHtml(g) {
+  if (g.type === 'highlight') {
+    return (
+      `<div style="position:fixed;left:${g.x}px;top:${g.y}px;width:${g.width}px;height:${g.height}px;` +
+      `border:${g.strokeWidth}px solid ${g.color};border-radius:${g.radius}px;box-sizing:border-box"></div>`
+    );
+  }
+  if (g.type === 'blur') {
+    const paint =
+      g.fill !== undefined
+        ? `background:${g.fill}`
+        : `backdrop-filter:blur(${g.blur}px);-webkit-backdrop-filter:blur(${g.blur}px)`;
+    return (
+      `<div style="position:fixed;left:${g.x}px;top:${g.y}px;` +
+      `width:${g.width}px;height:${g.height}px;${paint}"></div>`
+    );
+  }
+  return arrowHtml(g);
+}
+
+/**
+ * Axis-aligned arrow as an SVG covering just the arrow's bounding box: a
+ * round-capped line shortened to the head base, and a triangular head at the
+ * tip.
+ * @param {ArrowGeometry} g
+ */
+function arrowHtml(g) {
+  const { tip, tail, color, strokeWidth } = g;
+  const headLen = strokeWidth * 4;
+  const headHalf = strokeWidth * 2;
+  const margin = strokeWidth * 3; // covers head half-width + round linecap
+  const minX = Math.min(tip.x, tail.x) - margin;
+  const minY = Math.min(tip.y, tail.y) - margin;
+  const width = Math.abs(tip.x - tail.x) + 2 * margin;
+  const height = Math.abs(tip.y - tail.y) + 2 * margin;
+  // Local (svg) coordinates.
+  const t = { x: tip.x - minX, y: tip.y - minY };
+  const b = { x: tail.x - minX, y: tail.y - minY };
+  // Unit direction tail→tip (axis-aligned by construction).
+  const dx = Math.sign(t.x - b.x);
+  const dy = Math.sign(t.y - b.y);
+  const base = { x: t.x - dx * headLen, y: t.y - dy * headLen };
+  const p1 = { x: base.x - dy * headHalf, y: base.y - dx * headHalf };
+  const p2 = { x: base.x + dy * headHalf, y: base.y + dx * headHalf };
+  return (
+    `<svg style="position:fixed;left:${minX}px;top:${minY}px" width="${width}" height="${height}" ` +
+    `viewBox="0 0 ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg">` +
+    `<line x1="${b.x}" y1="${b.y}" x2="${base.x}" y2="${base.y}" ` +
+    `stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>` +
+    `<polygon points="${t.x},${t.y} ${p1.x},${p1.y} ${p2.x},${p2.y}" fill="${color}"/>` +
+    `</svg>`
+  );
+}
+
+module.exports = { validateAnnotations, resolveGeometry, overlayHtml };

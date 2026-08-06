@@ -4,7 +4,7 @@
 /** Self-check for lib/annotate.js. Run: node scripts/lib/annotate.test.js */
 
 const assert = require('assert');
-const { validateAnnotations, resolveGeometry } = require('./annotate');
+const { validateAnnotations, resolveGeometry, overlayHtml } = require('./annotate');
 
 assert.strictEqual(validateAnnotations(undefined), null, 'absent annotate is fine');
 assert.strictEqual(
@@ -78,3 +78,43 @@ assert.deepStrictEqual(
 );
 
 console.log('ok — resolveGeometry');
+
+// --- overlayHtml ---
+
+const geoms = [
+  resolveGeometry(square, { type: 'highlight', target: '#x' }),
+  resolveGeometry(square, { type: 'arrow', target: '#x' }),
+  resolveGeometry(square, { type: 'blur', target: '#x' }),
+  resolveGeometry(square, { type: 'blur', target: '#x', fill: '#1a1a1a' }),
+];
+const html = overlayHtml(geoms);
+
+// Deterministic: recomputing everything from scratch yields the same bytes.
+const again = overlayHtml([
+  resolveGeometry(square, { type: 'highlight', target: '#x' }),
+  resolveGeometry(square, { type: 'arrow', target: '#x' }),
+  resolveGeometry(square, { type: 'blur', target: '#x' }),
+  resolveGeometry(square, { type: 'blur', target: '#x', fill: '#1a1a1a' }),
+]);
+assert.strictEqual(html, again, 'byte-stable for identical input');
+
+// One element per geometry, correct paint per type.
+assert.match(html, /border:3px solid #d72c0d;border-radius:6px/);
+assert.match(html, /<svg [^>]*>.*<line .*stroke="#d72c0d"/);
+assert.match(html, /<polygon points="[0-9,. -]+" fill="#d72c0d"/);
+assert.match(html, /backdrop-filter:blur\(12px\)/);
+assert.match(html, /background:#1a1a1a/);
+
+// A solid redaction must not also blur, and vice versa.
+const parts = html.split('<div').filter((p) => p.includes('background:#1a1a1a'));
+assert.strictEqual(parts.length, 1);
+assert.ok(!parts[0].includes('backdrop-filter'), 'fill suppresses blur');
+
+// Everything is fixed-position (4 geometries → 4 fixed elements).
+assert.strictEqual((html.match(/position:fixed/g) || []).length, 4);
+
+// Arrow SVG spans its own bbox: default-left arrow tip(92,210) tail(36,210),
+// margin 9 → svg at left:27px top:201px, 74x18.
+assert.match(html, /<svg style="position:fixed;left:27px;top:201px" width="74" height="18"/);
+
+console.log('ok — overlayHtml');
