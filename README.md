@@ -61,6 +61,17 @@ Other capture engines (`chromium`, `firefox`, `webkit`, `msedge`) can be selecte
 
 > **Upgrading from before multi-engine capture?** If `~/.config/shopify-apps-doc-writer/<app>.json` has `capture.browser: "chromium"` (the old, inert default that `/docs-setup` used to write), that value is now honored — it will trigger a one-time bundled-Chromium download and render with Chromium instead of Chrome. Delete the key to stay on Chrome.
 
+### Updating
+
+Claude Code refreshes the marketplace on its own, but you can pull a new release immediately:
+
+```bash
+claude plugin marketplace update shopify-apps-doc-writer
+claude plugin update shopify-apps-doc-writer@shopify-apps-doc-writer
+```
+
+Updates arrive **only when `version` in `.claude-plugin/plugin.json` changes** — that string is Claude Code's update cache key, so commits pushed without a bump never reach an installed copy. See `CHANGELOG.md` for what each version contains.
+
 Working from a clone rather than an installed plugin? Run `npm install` yourself — the auto-install hook only fires for the installed plugin. To re-pin the writing skills to a newer upstream, run `./scripts/vendor-skills.sh` (a maintenance step, not needed for normal use — and re-apply the description de-emphasis afterward, per `skills/vendored/VERSIONS.md`).
 
 ## Configuration
