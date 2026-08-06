@@ -18,10 +18,10 @@ A Claude Code plugin that writes merchant-facing feature documentation for embed
 - Per-user config; team conventions live in the plugin itself (SKILL.md), not in shared config.
 
 ### Non-Goals (v1)
-- Screenshot annotation (arrows, highlight boxes, blur/redaction) → **v2**.
-- `/update-docs` re-publish *diffing* against a live external doc → **v2**. (Staleness detection + re-shoot + in-place re-publish shipped.)
+- Screenshot annotation (arrows, highlight boxes, blur/redaction) → **0.4 on the v2 roadmap (§13)**.
+- `/update-docs` re-publish *diffing* against a live external doc → **0.5 on the v2 roadmap (§13)**. (Staleness detection + re-shoot + in-place re-publish shipped.)
 - Automated publishing without human confirmation → never.
-- Managing/seeding dev store demo data → manual checklist item only.
+- Managing/seeding dev store demo data → manual checklist item only; deferred, uncommitted (§13).
 
 ---
 
@@ -361,9 +361,49 @@ No gate may be auto-approved. Publishing never happens in the same breath as dra
 6. Publish: local → google-docs → generic mcp, in that order.
 7. Description-triggering pass (skill-creator's optimizer) once stable.
 
-## 13. v2 Backlog
+## 13. v2 Roadmap
 
-- Annotation pipeline: highlight rects/arrows drawn from manifest coords (sharp/canvas post-process); blur/redaction boxes.
-- Demo-data seeding script for the dev store.
-- Multi-locale capture (config `locale` array → per-locale screenshot sets).
-- BetterDocs / docs-site MCP as a first-class publish target.
+Agreed 2026-08-06 (see `docs/superpowers/specs/2026-08-06-v2-roadmap-design.md`
+for the why). Incremental releases — each item ships alone as 0.3, 0.4, … when
+done. Ordering is quality-first: the v2 driver is the doc-quality ceiling, so
+the two items that raise doc quality lead — one cheap, one big. Each item gets
+its own design pass at build time; this section fixes scope boundaries and
+order, not implementation.
+
+### 0.3 — Vendor the writing skills
+Unfinished v1 work that is also a quality item: the writing phase currently
+runs on the doc-template fallback. Run `scripts/vendor-skills.sh` pinned to
+current upstream, re-apply the description de-emphasis (see
+`skills/vendored/VERSIONS.md`), verify `/write-docs` invokes all five skills
+explicitly and that none trigger on unrelated prompts.
+
+### 0.4 — Annotation pipeline
+Optional per-shot `annotate` list in the manifest (highlight rects, arrows,
+blur/redaction boxes), applied by a post-process step after capture.
+Constraints fixed now: annotations must be **deterministic on re-capture** —
+an unchanged UI re-annotated must stay byte-stable, or `/docs-check` reports
+phantom drift on every annotated doc. Whether coordinates are raw pixels or
+selector-anchored is the central design question, deferred to its brainstorm.
+
+### 0.5 — External re-publish diffing
+Before gate 3 on a re-publish, fetch the live external doc and diff both
+directions: what the re-push changes, and any manual edits made directly in
+the external doc that a re-push would clobber. Google Docs is the committed
+target; generic MCP targets best-effort.
+
+### 0.6 — Scheduled staleness sweeps
+Run `/docs-check` on a schedule after app releases; report through the
+existing draft-only Slack path. Sweeps only **report** — they never publish
+(the no-unconfirmed-publishing rule in §1 stands). Known constraint: auth
+state is per-user and never shared, so CI can't hold it — likely a locally
+scheduled agent rather than GitHub Actions. Decided at design time.
+
+### Deferred (uncommitted)
+Listed so they aren't forgotten; no ordering, no commitment. Each re-enters
+when its driver becomes the acute one.
+
+- **BetterDocs / docs-site MCP publish target** — serves team adoption, not
+  the quality driver; `/docs-deploy` already covers the internal docs-site need.
+- **Multi-locale capture** — serves coverage; no felt demand yet.
+- **Demo-data seeding** — serves capture robustness; the manual checklist has
+  been sufficient in real usage.
