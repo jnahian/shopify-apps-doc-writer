@@ -8,6 +8,25 @@ Notable changes to the `shopify-apps-doc-writer` plugin. Format follows
 `.claude-plugin/plugin.json` is bumped** — Claude Code uses that string as its
 update cache key, so merging to `main` alone ships nothing.
 
+## [0.3.0] - 2026-08-06
+
+### Changed
+
+- The writing phase's vendored-skill instructions now use `<plugin-root>`-qualified
+  paths and state the mechanism explicitly (read each skill's SKILL.md and follow
+  it — they are reference files, not registered skills), so doc-writing sessions
+  no longer try to resolve `skills/vendored/...` against the docs-repo worktree.
+  Same fix in `/docs-setup`'s product-context phase.
+- Vendored skills re-pinned to upstream `7868cb9` (no content changes to the
+  five skills; pin metadata only).
+
+### Fixed
+
+- The session-start dependency install no longer downloads dev-only packages
+  (`typescript`, `@types/node`) into your plugin install — `hooks/ensure-deps.js`
+  now runs `npm install --omit=dev`, about 30MB lighter. Only `playwright` is
+  needed at runtime.
+
 ## [0.2.0] - 2026-08-06
 
 Everything below landed on `main` from 2026-07-24 onward under an unchanged
