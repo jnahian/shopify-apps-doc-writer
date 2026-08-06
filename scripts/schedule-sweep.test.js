@@ -45,7 +45,19 @@ const shim = shimContent({ appKey: 'storeseo', docsRepo: '/repos/app', nodePath:
 assert.ok(shim.startsWith('#!/bin/sh'), 'sh shebang');
 assert.ok(shim.includes(path.join(CONFIG_DIR, 'plugin-root')), 'reads the pointer file');
 assert.ok(/open a Claude Code session/.test(shim), 'stale pointer → actionable message');
-assert.ok(shim.includes('cd "/repos/app"'), 'runs from the docs repo');
-assert.ok(shim.includes('exec "/usr/local/bin/node" "$ROOT/scripts/sweep.js" --app "storeseo"'), 'execs sweep.js from the CURRENT plugin root');
+assert.ok(shim.includes("cd '/repos/app'"), 'runs from the docs repo with single-quoted docsRepo');
+assert.ok(shim.includes('exec \'/usr/local/bin/node\' "$ROOT/scripts/sweep.js" --app "storeseo"'), 'execs sweep.js with single-quoted nodePath');
+
+// shim: paths with special chars are properly shell-escaped.
+const shimSpecial = shimContent({ appKey: 'storeseo', docsRepo: "/repos/my app's \"dir\"", nodePath: '/usr/bin/node\'s' });
+assert.ok(shimSpecial.includes("cd '/repos/my app'\"'\"'s \"dir\"'"), 'single-quotes-escaped docsRepo');
+assert.ok(shimSpecial.includes("exec '/usr/bin/node'\"'\"'s' \"$ROOT/scripts/sweep.js\" --app \"storeseo\""), 'single-quotes-escaped nodePath');
+
+// plist: XML entities are properly escaped in string values.
+const shimWithAmp = shimContent({ appKey: 'storeseo', docsRepo: '/repos/A&B', nodePath: '/usr/bin/node' });
+const plistWithAmp = plistContent({ appKey: 'storeseo', hour: 3, minute: 0 });
+assert.ok(!plistWithAmp.includes('&') || plistWithAmp.includes('&amp;') || plistWithAmp.includes('&lt;') || plistWithAmp.includes('&gt;'), 'no unescaped XML entities in plist');
+// The shim path in plist (which can contain &) should be properly escaped.
+assert.ok(!plistWithAmp.match(/<string>[^<]*&(?!(?:amp|lt|gt);)[^<]*<\/string>/), 'no bare & in XML string values');
 
 console.log('schedule-sweep.test.js OK');
