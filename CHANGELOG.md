@@ -8,6 +8,19 @@ Notable changes to the `shopify-apps-doc-writer` plugin. Format follows
 `.claude-plugin/plugin.json` is bumped** — Claude Code uses that string as its
 update cache key, so merging to `main` alone ships nothing.
 
+## [0.4.0] - 2026-08-07
+
+### Added
+
+- Per-shot `annotate` list in the shot manifest — `highlight` rectangles,
+  `arrow` pointers, and `blur`/redaction boxes, anchored to selectors and
+  drawn as an in-browser overlay just before the screenshot. Deterministic on
+  re-capture: an unchanged UI with an unchanged `annotate` list produces
+  byte-identical PNGs, so `/docs-check` reports no phantom drift. A moved or
+  missing target fails capture with exit 20 instead of drawing a misplaced
+  box. Every style knob is optional with house defaults; see the manifest
+  schema reference for the full table.
+
 ## [0.3.0] - 2026-08-06
 
 ### Changed
