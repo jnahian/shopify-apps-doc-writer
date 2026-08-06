@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A **Claude Code plugin** (`shopify-apps-doc-writer`), not an application. Most of its "source" is markdown that instructs Claude at runtime — `commands/*.md`, `skills/shopify-apps-doc-writer/SKILL.md`, and its `references/`. The only executable code is two Node scripts (plus their shared lib) and a vendoring shell script. Behavior changes usually mean editing markdown, not JS.
 
-`SPEC.md` is the design source of truth (v1 scope, non-goals, build order, v2 backlog). Check it before adding anything — several obvious-seeming features are deliberately deferred to v2 (annotation, demo-data seeding, multi-locale).
+`SPEC.md` is the design source of truth (v1 scope, non-goals, build order, v2 roadmap). Check it before adding anything — §13 fixes what ships next and what stays deferred (e.g. multi-locale, demo-data seeding).
 
 ## Commands
 
@@ -24,13 +24,14 @@ node scripts/update-check.js --all --app <key>          # staleness sweep across
 ```
 
 ```bash
-node scripts/lib/shopify.test.js    # selector resolution (visible-match preference)
-node scripts/lib/md2html.test.js    # markdown→HTML (ordered-list numbering trap)
-node scripts/build-site.test.js     # site projection (badges, inline images, skip handling)
+npm test                            # every *.test.js suite, via node --test
 npm run typecheck                   # tsc --noEmit over the JS via JSDoc (strict checkJs)
+node scripts/lib/shopify.test.js    # any suite also runs standalone
 ```
 
-There is no test runner, linter, or build step — the self-checks above are plain `assert` scripts, and the typecheck compiles nothing (the scripts stay plain JS; types live in JSDoc comments, checked by `tsconfig.json`'s `checkJs`). Verify capture changes by running a real capture against a manifest.
+The suites are plain `assert` scripts (no framework — `node --test` just runs each file and reads its exit code), and the typecheck compiles nothing (the scripts stay plain JS; types live in JSDoc comments, checked by `tsconfig.json`'s `checkJs`). CI (`.github/workflows/ci.yml`) runs both on every PR and push to `main`.
+
+**JS changes follow TDD.** For any change to `scripts/` or `hooks/`: write the failing test first — a plain `assert` script named `<module>.test.js` beside its module, which `node --test` auto-discovers — watch it fail, then implement. `npm test` and `npm run typecheck` must both pass before commit. Markdown changes have no runner and are exempt; verify capture-affecting ones by running a real capture against a manifest.
 
 `skills/vendored/` currently holds only `VERSIONS.md` — the skills are not vendored yet. SKILL.md handles this gracefully (falls back to the doc template), so don't assume those directories exist.
 

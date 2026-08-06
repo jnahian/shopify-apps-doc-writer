@@ -370,6 +370,10 @@ the two items that raise doc quality lead — one cheap, one big. Each item gets
 its own design pass at build time; this section fixes scope boundaries and
 order, not implementation.
 
+Landed before 0.3 (dev-only, no release needed): `npm test` over the
+self-check suites, GitHub Actions CI (typecheck + tests), and a TDD rule for
+JS changes in CLAUDE.md.
+
 ### 0.3 — Vendor the writing skills
 Unfinished v1 work that is also a quality item: the writing phase currently
 runs on the doc-template fallback. Run `scripts/vendor-skills.sh` pinned to
