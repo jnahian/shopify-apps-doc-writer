@@ -48,6 +48,7 @@ const LOGIN_TIMEOUT_MS = 5 * 60 * 1000;
  */
 const CDP_PORT = 9333;
 
+/** @type {Partial<Record<NodeJS.Platform, string[]>>} */
 const CHROME_PATHS = {
   darwin: ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'],
   win32: [
@@ -79,6 +80,11 @@ async function probeCdp() {
   }
 }
 
+/**
+ * @param {() => boolean|Promise<boolean>} check
+ * @param {number} timeoutMs
+ * @param {number} [intervalMs]
+ */
 async function waitFor(check, timeoutMs, intervalMs = 500) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -88,6 +94,7 @@ async function waitFor(check, timeoutMs, intervalMs = 500) {
   return false;
 }
 
+/** @returns {typeof import('playwright')} */
 function loadPlaywright() {
   try {
     return require('playwright');
@@ -99,7 +106,7 @@ function loadPlaywright() {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const appKey = resolveAppKey(args.app);
+  const appKey = resolveAppKey(/** @type {string|undefined} */ (args.app));
 
   if (args.store || args.handle) {
     saveConfig(appKey, {
@@ -160,7 +167,7 @@ async function main() {
   const quitChrome = () => {
     if (!child) return;
     try {
-      process.kill(child.pid);
+      process.kill(/** @type {number} */ (child.pid));
     } catch {
       /* already gone */
     }

@@ -15,6 +15,8 @@ const ADMIN_SHELL_SELECTOR = 'nav, [role="navigation"]';
  * Build an absolute admin URL from a manifest path like "/admin/apps/x/y".
  * Navigating via the store domain lets Shopify redirect to the canonical
  * admin.shopify.com/store/<name>/... form on its own.
+ * @param {string} store
+ * @param {string} [adminPath]
  */
 function adminUrl(store, adminPath) {
   const host = store.replace(/^https?:\/\//, '').replace(/\/+$/, '');
@@ -24,12 +26,20 @@ function adminUrl(store, adminPath) {
   return `https://${host}${p}`;
 }
 
+/**
+ * @param {string} store
+ * @param {string} appHandle
+ * @param {string} [subPath]
+ */
 function appUrl(store, appHandle, subPath = '') {
   const sub = subPath ? (subPath.startsWith('/') ? subPath : '/' + subPath) : '';
   return adminUrl(store, `/admin/apps/${appHandle}${sub}`);
 }
 
-/** True when the URL is a Shopify login/auth page rather than the admin. */
+/**
+ * True when the URL is a Shopify login/auth page rather than the admin.
+ * @param {string} url
+ */
 function isLoginUrl(url) {
   return (
     /accounts\.shopify\.com/.test(url) ||
@@ -53,11 +63,15 @@ function isLoginUrl(url) {
 const CHALLENGE_MARKER =
   /connection needs to be verified|verify(ing)? you are human|checking your browser|cf-browser-verification|challenge-(running|form)|checking_browser|_cf_chl/i;
 
+/** @param {string} html */
 function isBotChallenge(html) {
   return CHALLENGE_MARKER.test(html || '');
 }
 
-/** Read the live page's markup and classify it. Never throws. */
+/**
+ * Read the live page's markup and classify it. Never throws.
+ * @param {import('playwright').Page} page
+ */
 async function detectBotChallenge(page) {
   try {
     const html = await page.evaluate(() =>
@@ -69,7 +83,10 @@ async function detectBotChallenge(page) {
   }
 }
 
-/** True when the URL is an authenticated admin page. */
+/**
+ * True when the URL is an authenticated admin page.
+ * @param {string} url
+ */
 function isAdminUrl(url) {
   if (isLoginUrl(url)) return false;
   return (
@@ -88,6 +105,10 @@ function isAdminUrl(url) {
  * layouts render duplicate controls (one desktop, one mobile) and the hidden
  * one is often first in the DOM. Matching .first() and then testing
  * visibility would poll the hidden twin until timeout.
+ * @param {import('playwright').Page} page
+ * @param {string} selector
+ * @param {number} timeoutMs
+ * @returns {Promise<import('playwright').Locator|null>}
  */
 async function findInPageOrIframe(page, selector, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
@@ -108,6 +129,9 @@ async function findInPageOrIframe(page, selector, timeoutMs) {
 /**
  * Apply a shot's wait strategy: "networkidle+selector" (default) or
  * "selector". Throws { code: 'SELECTOR_TIMEOUT' } if waitFor never shows.
+ * @param {import('playwright').Page} page
+ * @param {{id: string, waitFor?: string, waitStrategy?: string}} shot
+ * @param {number} [timeoutMs]
  */
 async function applyWaitStrategy(page, shot, timeoutMs = 30000) {
   const strategy = shot.waitStrategy || 'networkidle+selector';
@@ -117,14 +141,16 @@ async function applyWaitStrategy(page, shot, timeoutMs = 30000) {
     await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
   }
   if (!shot.waitFor) {
-    const err = new Error(`Shot "${shot.id}" has no waitFor selector (required).`);
+    const err = /** @type {Error & {code?: string}} */ (
+      new Error(`Shot "${shot.id}" has no waitFor selector (required).`)
+    );
     err.code = 'MANIFEST_INVALID';
     throw err;
   }
   const found = await findInPageOrIframe(page, shot.waitFor, timeoutMs);
   if (!found) {
-    const err = new Error(
-      `Shot "${shot.id}": selector never became visible: ${shot.waitFor}`
+    const err = /** @type {Error & {code?: string}} */ (
+      new Error(`Shot "${shot.id}": selector never became visible: ${shot.waitFor}`)
     );
     err.code = 'SELECTOR_TIMEOUT';
     throw err;

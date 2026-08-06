@@ -13,10 +13,15 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+/** @param {string} filePath */
 function sha256File(filePath) {
   return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
 
+/**
+ * @param {string} indexPath
+ * @param {string} [publishedHash]
+ */
 function detectCopyDrift(indexPath, publishedHash) {
   const currentHash = sha256File(indexPath);
   return { changed: currentHash !== publishedHash, currentHash, publishedHash };
@@ -31,6 +36,10 @@ function detectCopyDrift(indexPath, publishedHash) {
  * host-app chrome — so their bytes differ between captures of an unchanged
  * feature. Comparing them would report drift that isn't there, so they are
  * re-shot but reported as skipped rather than silently counted as clean.
+ * @param {string} committedDir
+ * @param {string} freshDir
+ * @param {Array<string|{id: string, driftCheck?: boolean}>} shots
+ * @returns {Array<{file: string, changed: boolean, skipped: boolean}>}
  */
 function classifyScreenshots(committedDir, freshDir, shots) {
   return shots.map((shot) => {
@@ -53,6 +62,13 @@ function classifyScreenshots(committedDir, freshDir, shots) {
   });
 }
 
+/**
+ * @param {{
+ *   slug: string, url: string|null, published: boolean, tmpDir: string|null,
+ *   copy: {changed: boolean, currentHash?: string, publishedHash?: string}|null,
+ *   shots: Array<{file: string, changed: boolean, skipped?: boolean}>,
+ * }} state
+ */
 function buildReport({ slug, url, published, tmpDir, copy, shots }) {
   const changedCount = shots.filter((s) => s.changed && !s.skipped).length;
   const skippedCount = shots.filter((s) => s.skipped).length;
@@ -68,13 +84,14 @@ function buildReport({ slug, url, published, tmpDir, copy, shots }) {
   };
 }
 
+/** @param {ReturnType<typeof buildReport>} report */
 function formatReport(report) {
   if (!report.published) {
     return `"${report.slug}" has not been published yet — nothing to compare against.`;
   }
   const { changedCount, skippedCount, total } = report.screenshots;
   const lines = [`Doc: ${report.slug}  (published → ${report.url})`];
-  lines.push(`Copy:        ${report.copy.changed ? 'CHANGED since publish' : 'unchanged'}`);
+  lines.push(`Copy:        ${report.copy?.changed ? 'CHANGED since publish' : 'unchanged'}`);
   lines.push(
     `Screenshots: ${changedCount} of ${total} changed` +
       (skippedCount ? ` (${skippedCount} skipped)` : '')

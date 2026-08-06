@@ -31,7 +31,15 @@ const EXIT_AUTH = 10;
 const EXIT_SELECTOR = 20;
 const EXIT_CHALLENGE = 30;
 
-/** Re-shoot by invoking capture.js so it remains the only screenshotter. */
+/**
+ * @typedef {Error & {exitCode?: number}} ExitError
+ * @typedef {(opts: {manifestPath: string, appKey: string, outDir: string}) => void} CaptureFn
+ */
+
+/**
+ * Re-shoot by invoking capture.js so it remains the only screenshotter.
+ * @type {CaptureFn}
+ */
 function realCapture({ manifestPath, appKey, outDir }) {
   // capture.js prints progress to stdout via console.log; we need clean JSON on our stdout,
   // so route its stdout+stderr to our stderr (fd 2), keeping the contract intact.
@@ -41,28 +49,31 @@ function realCapture({ manifestPath, appKey, outDir }) {
     { stdio: ['ignore', 2, 2] }
   );
   if (res.status === EXIT_AUTH) {
-    const e = new Error('Session expired — run /docs-setup auth, then re-run.');
+    const e = /** @type {ExitError} */ (new Error('Session expired — run /docs-setup auth, then re-run.'));
     e.exitCode = EXIT_AUTH;
     throw e;
   }
   if (res.status === EXIT_CHALLENGE) {
-    const e = new Error('Bot challenge — the browser was interstitialed; re-run with capture --headed.');
+    const e = /** @type {ExitError} */ (new Error('Bot challenge — the browser was interstitialed; re-run with capture --headed.'));
     e.exitCode = EXIT_CHALLENGE;
     throw e;
   }
   if (res.status === EXIT_SELECTOR) {
-    const e = new Error('Selector timeout — the UI has likely changed; update the manifest.');
+    const e = /** @type {ExitError} */ (new Error('Selector timeout — the UI has likely changed; update the manifest.'));
     e.exitCode = EXIT_SELECTOR;
     throw e;
   }
   if (res.status !== 0) {
     const cause = res.error ? ` — ${res.error.message}` : '';
-    const e = new Error(`capture.js failed (exit ${res.status})${cause}.`);
+    const e = /** @type {ExitError} */ (new Error(`capture.js failed (exit ${res.status})${cause}.`));
     e.exitCode = 1;
     throw e;
   }
 }
 
+/**
+ * @param {{manifestPath: string, appKey: string, capture?: CaptureFn, tmpFactory?: () => string, sweep?: boolean}} opts
+ */
 function run({ manifestPath, appKey, capture = realCapture, tmpFactory, sweep = false }) {
   const docDir = path.dirname(manifestPath);
   const meta = JSON.parse(fs.readFileSync(path.join(docDir, 'meta.json'), 'utf8'));
@@ -119,9 +130,18 @@ function run({ manifestPath, appKey, capture = realCapture, tmpFactory, sweep = 
  * becomes that doc's `error`, and the sweep continues. Auth expiry (10) and a
  * bot challenge (30) abort — both are environment-level, so every subsequent
  * doc would fail identically.
+ * @param {{docsDir: string, appKey: string, capture?: CaptureFn, tmpFactory?: () => string}} opts
  */
 function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
+  /**
+   * Discriminated on `error`: a doc that failed capture has no comparison data.
+   * @type {Array<{slug: string, published: null, copy: null, screenshots: null, error: 'selector-timeout'|'capture-failed', anyDrift: false}
+   *   | {slug: string, published: boolean, copy: {changed: boolean}|null,
+   *      screenshots: {changedCount: number, skippedCount: number, total: number, shots: object[]},
+   *      error: null, anyDrift: boolean}>}
+   */
   const docs = [];
+  /** @type {Array<{dir: string, reason: string}>} */
   const skipped = [];
   const entries = fs.existsSync(docsDir)
     ? fs.readdirSync(docsDir, { withFileTypes: true }).filter((e) => e.isDirectory())
@@ -129,6 +149,7 @@ function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
 
   for (const e of entries) {
     const dir = path.join(docsDir, e.name);
+    /** @type {string|null} */
     let defect = null;
     for (const f of ['manifest.json', 'meta.json']) {
       const p = path.join(dir, f);
@@ -181,6 +202,7 @@ function runAll({ docsDir, appKey, capture = realCapture, tmpFactory }) {
   };
 }
 
+/** @param {ReturnType<typeof runAll>} report */
 function formatSweep(report) {
   const lines = [`Checked ${report.checked} doc(s)`];
   for (const d of report.docs) {
@@ -208,15 +230,16 @@ function main() {
     );
     process.exit(1);
   }
-  const appKey = resolveAppKey(args.app);
+  const appKey = resolveAppKey(/** @type {string|undefined} */ (args.app));
 
+  /** @type {any} */
   let report;
   try {
     if (args.all) {
       const config = loadConfig(appKey);
       report = runAll({ docsDir: path.resolve(config.capture.outputDir), appKey });
     } else {
-      report = run({ manifestPath: path.resolve(args.manifest), appKey });
+      report = run({ manifestPath: path.resolve(String(args.manifest)), appKey });
     }
   } catch (err) {
     if (err.exitCode) {

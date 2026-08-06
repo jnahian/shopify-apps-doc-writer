@@ -36,6 +36,24 @@ const EXIT_AUTH = 10;
 const EXIT_SELECTOR = 20;
 const EXIT_CHALLENGE = 30;
 
+/**
+ * @typedef {import('playwright').Page} Page
+ * @typedef {Error & {code?: string}} CodedError
+ * @typedef {{
+ *   click?: string, fill?: {selector: string, value: string|number},
+ *   select?: {selector: string, value: string|number}, hover?: string,
+ *   press?: {selector?: string, key: string}, waitMs?: number,
+ * }} Action
+ * @typedef {{
+ *   id: string, path: string, waitFor: string, waitStrategy?: string,
+ *   crop?: string, actions?: Action[], mutation?: boolean, driftCheck?: boolean,
+ * }} Shot
+ * @typedef {{
+ *   app: string, feature: string, browser?: string,
+ *   viewport?: {width: number, height: number}, shots: Shot[],
+ * }} Manifest
+ */
+
 const ACTION_TIMEOUT_MS = 15000;
 const WAITFOR_TIMEOUT_MS = 30000;
 
@@ -54,6 +72,7 @@ const SETTLE_MAX_TRIES = 10;
 const DESTRUCTIVE_PATTERN =
   /\b(delete|remove|destroy|discard|uninstall|disconnect|revoke|reset|save|submit|publish|apply|confirm|approve|activate|deactivate|pay|charge|subscribe|upgrade|install)\b/i;
 
+/** @param {Action} action */
 function actionTargets(action) {
   if (typeof action.click === 'string') return [action.click];
   if (action.fill) return [action.fill.selector];
@@ -63,6 +82,7 @@ function actionTargets(action) {
   return [];
 }
 
+/** @param {Manifest} manifest */
 function checkReadOnly(manifest) {
   const violations = [];
   for (const shot of manifest.shots) {
@@ -86,7 +106,12 @@ function checkReadOnly(manifest) {
   }
 }
 
+/**
+ * @param {Manifest} manifest
+ * @param {string} manifestPath
+ */
 function validateManifest(manifest, manifestPath) {
+  /** @param {string} msg */
   const fail = (msg) => {
     console.error(`Invalid manifest ${manifestPath}: ${msg}`);
     process.exit(1);
@@ -107,11 +132,18 @@ function validateManifest(manifest, manifestPath) {
   }
 }
 
+/**
+ * @param {Page} page
+ * @param {Action} action
+ */
 async function runAction(page, action) {
+  /** @param {string} selector */
   const resolve = async (selector) => {
     const loc = await findInPageOrIframe(page, selector, ACTION_TIMEOUT_MS);
     if (!loc) {
-      const err = new Error(`action selector never became visible: ${selector}`);
+      const err = /** @type {CodedError} */ (
+        new Error(`action selector never became visible: ${selector}`)
+      );
       err.code = 'SELECTOR_TIMEOUT';
       throw err;
     }
@@ -139,10 +171,16 @@ async function runAction(page, action) {
   }
 }
 
+/**
+ * @param {Page} page
+ * @param {import('./lib/config').AppConfig} config
+ * @param {Shot} shot
+ * @param {string} outDir
+ */
 async function captureShot(page, config, shot, outDir) {
   await page.goto(adminUrl(config.store, shot.path), { waitUntil: 'domcontentloaded' });
   if (isLoginUrl(page.url())) {
-    const err = new Error('redirected to login');
+    const err = /** @type {CodedError} */ (new Error('redirected to login'));
     err.code = 'AUTH_EXPIRED';
     throw err;
   }
@@ -155,19 +193,22 @@ async function captureShot(page, config, shot, outDir) {
 
   // Auth can also expire mid-run after in-page redirects.
   if (isLoginUrl(page.url())) {
-    const err = new Error('redirected to login');
+    const err = /** @type {CodedError} */ (new Error('redirected to login'));
     err.code = 'AUTH_EXPIRED';
     throw err;
   }
 
   const file = path.join(outDir, `${shot.id}.png`);
 
+  /** @type {() => Promise<Buffer>} */
   let shoot;
   if (shot.crop === 'iframe') {
     const frameEl = page.locator(APP_IFRAME_SELECTOR).first();
     if (!(await frameEl.isVisible().catch(() => false))) {
-      const err = new Error(
-        `shot "${shot.id}": crop is "iframe" but no app iframe (${APP_IFRAME_SELECTOR}) is visible`
+      const err = /** @type {CodedError} */ (
+        new Error(
+          `shot "${shot.id}": crop is "iframe" but no app iframe (${APP_IFRAME_SELECTOR}) is visible`
+        )
       );
       err.code = 'SELECTOR_TIMEOUT';
       throw err;
@@ -192,6 +233,8 @@ async function captureShot(page, config, shot, outDir) {
  * /update-docs report drift that isn't there. Polling until the bytes stop
  * moving makes re-capture reproducible without hardcoding per-app selectors
  * or a blanket sleep on every shot.
+ * @param {Page} page
+ * @param {() => Promise<Buffer>} shoot
  */
 async function settle(page, shoot) {
   await page.waitForTimeout(SETTLE_MIN_MS);
@@ -207,6 +250,7 @@ async function settle(page, shoot) {
   return prev;
 }
 
+/** @type {Record<string, {engine: 'chromium'|'firefox'|'webkit', channel?: string}>} */
 const BROWSERS = {
   chrome: { engine: 'chromium', channel: 'chrome' },
   msedge: { engine: 'chromium', channel: 'msedge' },
@@ -215,10 +259,16 @@ const BROWSERS = {
   webkit: { engine: 'webkit' },
 };
 
-/** Precedence: --browser CLI > manifest.browser > config.capture.browser > 'chrome'. */
+/**
+ * Precedence: --browser CLI > manifest.browser > config.capture.browser > 'chrome'.
+ * @param {{browser?: string|true}} args
+ * @param {{browser?: string}} manifest
+ * @param {{capture?: {browser?: string}}} config
+ */
 function resolveBrowser(args, manifest, config) {
-  const name =
-    args.browser || manifest.browser || (config.capture && config.capture.browser) || 'chrome';
+  const name = /** @type {string} */ (
+    args.browser || manifest.browser || (config.capture && config.capture.browser) || 'chrome'
+  );
   const spec = BROWSERS[name];
   if (!spec) {
     throw new Error(
@@ -228,8 +278,12 @@ function resolveBrowser(args, manifest, config) {
   return { name, ...spec };
 }
 
+/**
+ * @param {{"out-dir"?: string|true}} args
+ * @param {string} manifestPath
+ */
 function resolveOutDir(args, manifestPath) {
-  if (args['out-dir']) return path.resolve(args['out-dir']);
+  if (args['out-dir']) return path.resolve(String(args['out-dir']));
   return path.join(path.dirname(manifestPath), 'screenshots');
 }
 
@@ -242,16 +296,17 @@ async function main() {
     process.exit(1);
   }
 
-  const manifestPath = path.resolve(args.manifest);
+  const manifestPath = path.resolve(String(args.manifest));
   if (!fs.existsSync(manifestPath)) {
     console.error(`Manifest not found: ${manifestPath}`);
     process.exit(1);
   }
+  /** @type {Manifest} */
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   validateManifest(manifest, manifestPath);
   checkReadOnly(manifest);
 
-  const appKey = resolveAppKey(args.app || manifest.app);
+  const appKey = resolveAppKey(/** @type {string} */ (args.app) || manifest.app);
   const config = loadConfig(appKey);
 
   if (!fs.existsSync(config.storageState)) {
@@ -273,6 +328,7 @@ async function main() {
   const outDir = resolveOutDir(args, manifestPath);
   fs.mkdirSync(outDir, { recursive: true });
 
+  /** @type {typeof import('playwright')} */
   let playwright;
   try {
     playwright = require('playwright');
@@ -296,6 +352,7 @@ async function main() {
   // only converges reliably on chrome — firefox/webkit re-encode enough of the
   // frame between runs to trip /docs-check drift. See SPEC.md § Dependencies.
   const engine = playwright[spec.engine];
+  /** @type {{headless: boolean, channel?: string}} */
   const launchOpts = {
     headless: args.headed ? false : config.capture.headless !== false,
   };

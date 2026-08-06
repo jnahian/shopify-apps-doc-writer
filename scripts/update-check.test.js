@@ -28,10 +28,12 @@ fs.writeFileSync(path.join(doc, 'screenshots', '02.png'), 'B');
 const manifestPath = path.join(doc, 'manifest.json');
 
 // Fake captures write "fresh" shots into outDir.
+/** @param {{outDir: string}} opts */
 const captureNoDrift = ({ outDir }) => {
   fs.writeFileSync(path.join(outDir, '01.png'), 'A');
   fs.writeFileSync(path.join(outDir, '02.png'), 'B');
 };
+/** @param {{outDir: string}} opts */
 const captureShotDrift = ({ outDir }) => {
   fs.writeFileSync(path.join(outDir, '01.png'), 'A');
   fs.writeFileSync(path.join(outDir, '02.png'), 'B-CHANGED');
@@ -46,12 +48,12 @@ assert.strictEqual(r.anyDrift, false, 'identical shots + copy → no drift');
 r = run({ manifestPath, appKey: 'x', capture: captureShotDrift });
 assert.strictEqual(r.anyDrift, true, 'byte-diff shot → drift');
 assert.strictEqual(r.screenshots.changedCount, 1, 'one shot changed');
-assert.strictEqual(r.screenshots.shots.find((s) => s.file === '02.png').changed, true, '02 flagged');
+assert.strictEqual(r.screenshots.shots.find((s) => s.file === '02.png')?.changed, true, '02 flagged');
 
 // Copy drift: edit index.md after publishedHash was captured.
 fs.writeFileSync(path.join(doc, 'index.md'), '# Hello edited\n');
 r = run({ manifestPath, appKey: 'x', capture: captureNoDrift });
-assert.strictEqual(r.copy.changed, true, 'edited copy → copy drift');
+assert.strictEqual(r.copy?.changed, true, 'edited copy → copy drift');
 assert.strictEqual(r.anyDrift, true, 'copy edit alone → drift');
 fs.writeFileSync(path.join(doc, 'index.md'), '# Hello\n'); // restore
 
@@ -67,13 +69,13 @@ fs.writeFileSync(
   JSON.stringify({ slug: 'demo', publish: { url: 'u', publishedHash } })
 );
 const captureAuth = () => {
-  const e = new Error('auth expired');
+  const e = /** @type {Error & {exitCode?: number}} */ (new Error('auth expired'));
   e.exitCode = 10;
   throw e;
 };
 assert.throws(
   () => run({ manifestPath, appKey: 'x', capture: captureAuth }),
-  (e) => e.exitCode === 10,
+  (/** @type {any} */ e) => e.exitCode === 10,
   'capture auth failure propagates exitCode 10'
 );
 
@@ -93,6 +95,11 @@ const { runAll } = require('./update-check');
 
 const docsRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'docs-'));
 
+/**
+ * @param {string} slug
+ * @param {{url: string, publishedHash: string}|null} publish
+ * @param {string} committedShotBytes
+ */
 function makeDoc(slug, publish, committedShotBytes) {
   const d = path.join(docsRoot, slug);
   fs.mkdirSync(path.join(d, 'screenshots'), { recursive: true });
@@ -120,21 +127,23 @@ fs.writeFileSync(path.join(docsRoot, 'bad-meta', 'meta.json'), '{nope');
 
 // Fake capture keyed by doc: clean-pub re-shoots identical bytes, broken-ui
 // hits a selector timeout, everything else re-shoots changed bytes.
+/** @param {{manifestPath: string, outDir: string}} opts */
 const sweepCapture = ({ manifestPath, outDir }) => {
   const slug = path.basename(path.dirname(manifestPath));
   if (slug === 'broken-ui') {
-    const e = new Error('selector timeout');
+    const e = /** @type {Error & {exitCode?: number}} */ (new Error('selector timeout'));
     e.exitCode = 20;
     throw e;
   }
   if (slug === 'crash-doc') {
-    const e = new Error('capture.js failed (exit 1)');
+    const e = /** @type {Error & {exitCode?: number}} */ (new Error('capture.js failed (exit 1)'));
     e.exitCode = 1;
     throw e;
   }
   fs.writeFileSync(path.join(outDir, '01.png'), slug === 'clean-pub' ? 'SAME' : 'NEW');
 };
 
+/** @type {string[]} */
 const madeTmp = [];
 const trackedTmp = () => {
   const t = fs.mkdtempSync(path.join(os.tmpdir(), 'sweep-'));
@@ -161,7 +170,7 @@ assert.strictEqual(bySlug['clean-pub'].error, null, 'clean doc has no error');
 
 assert.strictEqual(bySlug['stale-pub'].anyDrift, true, 'stale published doc → drift');
 assert.strictEqual(bySlug['stale-pub'].screenshots.changedCount, 1, 'its shot changed');
-assert.strictEqual(bySlug['stale-pub'].copy.changed, false, 'its copy did not change');
+assert.strictEqual(bySlug['stale-pub'].copy?.changed, false, 'its copy did not change');
 
 assert.strictEqual(bySlug['stale-draft'].published, false, 'draft reported unpublished');
 assert.strictEqual(bySlug['stale-draft'].copy, null, 'no publishedHash → copy not compared');
@@ -182,19 +191,19 @@ assert.ok(madeTmp.every((t) => !fs.existsSync(t)), 'sweep deletes every temp dir
 // Auth expiry aborts the whole sweep — every doc would fail identically.
 assert.throws(
   () => runAll({ docsDir: docsRoot, appKey: 'x', capture: captureAuth }),
-  (e) => e.exitCode === 10,
+  (/** @type {any} */ e) => e.exitCode === 10,
   'auth expiry aborts the sweep'
 );
 
 // A bot challenge (30) is environment-level like auth: abort, don't blame docs.
 const captureChallenge = () => {
-  const e = new Error('bot challenge');
+  const e = /** @type {Error & {exitCode?: number}} */ (new Error('bot challenge'));
   e.exitCode = 30;
   throw e;
 };
 assert.throws(
   () => runAll({ docsDir: docsRoot, appKey: 'x', capture: captureChallenge }),
-  (e) => e.exitCode === 30,
+  (/** @type {any} */ e) => e.exitCode === 30,
   'bot challenge aborts the sweep'
 );
 

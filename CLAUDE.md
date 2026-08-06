@@ -27,9 +27,10 @@ node scripts/update-check.js --all --app <key>          # staleness sweep across
 node scripts/lib/shopify.test.js    # selector resolution (visible-match preference)
 node scripts/lib/md2html.test.js    # markdown→HTML (ordered-list numbering trap)
 node scripts/build-site.test.js     # site projection (badges, inline images, skip handling)
+npm run typecheck                   # tsc --noEmit over the JS via JSDoc (strict checkJs)
 ```
 
-There is no test runner, linter, or build step — the two self-checks above are plain `assert` scripts. Verify capture changes by running a real capture against a manifest.
+There is no test runner, linter, or build step — the self-checks above are plain `assert` scripts, and the typecheck compiles nothing (the scripts stay plain JS; types live in JSDoc comments, checked by `tsconfig.json`'s `checkJs`). Verify capture changes by running a real capture against a manifest.
 
 `skills/vendored/` currently holds only `VERSIONS.md` — the skills are not vendored yet. SKILL.md handles this gracefully (falls back to the doc template), so don't assume those directories exist.
 

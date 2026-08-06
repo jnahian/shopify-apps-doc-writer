@@ -8,9 +8,14 @@
   },
   "scripts": {
     "setup-auth": "node scripts/setup-auth.js",
-    "capture": "node scripts/capture.js"
+    "capture": "node scripts/capture.js",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "playwright": "^1.49.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2"
   }
 }

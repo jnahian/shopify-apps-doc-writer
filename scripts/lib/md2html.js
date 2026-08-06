@@ -15,27 +15,32 @@
  * <figure>/<img> elements instead.
  */
 
+/** @param {string} s */
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/** @param {string} s */
 const inline = (s) =>
   esc(s)
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
     .replace(/`(.+?)`/g, '<code>$1</code>');
 
+/** @param {string} s */
 const attr = (s) => esc(s).replace(/"/g, '&quot;');
 
 /**
  * @param {string} md      doc markdown (docs/<slug>/index.md)
  * @param {string} slug    feature slug, used in the screenshot placeholder path
- * @param {object} [opts]  { images: 'placeholder'|'inline', wrap: boolean }
+ * @param {{images?: 'placeholder'|'inline', wrap?: boolean}} [opts]
  *                         'inline' emits real <img> tags (docs-site build);
  *                         default 'placeholder' is the Google Docs degraded path.
  * @returns {string}       HTML (wrapped in <html><body> unless wrap:false)
  */
 function mdToHtml(md, slug, opts = {}) {
   const inlineImages = opts.images === 'inline';
+  /** @type {string[]} */
   const out = [];
-  let list = null; // 'ul' | 'ol' | null
+  /** @type {'ul'|'ol'|null} */
+  let list = null;
 
   const closeList = () => {
     if (list) {
@@ -43,6 +48,7 @@ function mdToHtml(md, slug, opts = {}) {
       list = null;
     }
   };
+  /** @param {'ul'|'ol'} kind */
   const openList = (kind) => {
     if (list !== kind) {
       closeList();
@@ -53,6 +59,7 @@ function mdToHtml(md, slug, opts = {}) {
   // Fold trailing content into the open list item rather than closing the
   // list. Closing it restarts numbering at 1 on the next step — which is
   // exactly what happens when a screenshot sits between two numbered steps.
+  /** @param {string} html */
   const appendToLastItem = (html) => {
     const i = out.length - 1;
     out[i] = out[i].replace(/<\/li>$/, `<br>${html}</li>`);

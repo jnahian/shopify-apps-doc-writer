@@ -19,6 +19,11 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'build-site-test-'));
 const docsDir = path.join(root, 'docs');
 const outDir = path.join(root, 'out');
 
+/**
+ * @param {string} slug
+ * @param {object} meta
+ * @param {string} md
+ */
 function writeDoc(slug, meta, md) {
   const dir = path.join(docsDir, slug);
   fs.mkdirSync(path.join(dir, 'screenshots'), { recursive: true });

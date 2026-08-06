@@ -6,6 +6,17 @@ const path = require('path');
 
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'shopify-apps-doc-writer');
 
+/**
+ * @typedef {Record<string, string|true>} Args
+ * @typedef {{
+ *   appKey: string, store: string, appHandle: string, storageState: string,
+ *   viewport: {width: number, height: number}, locale: string,
+ *   capture: {mode: string, outputDir: string, browser: string, headless: boolean},
+ *   publish: {target: string},
+ *   deploy?: {pagesProject?: string},
+ * }} AppConfig
+ */
+
 const DEFAULTS = {
   viewport: { width: 1440, height: 900 },
   locale: 'en',
@@ -20,15 +31,18 @@ const DEFAULTS = {
   },
 };
 
+/** @param {string} p */
 function expandHome(p) {
   if (!p) return p;
   return p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p;
 }
 
+/** @param {string} appKey */
 function configPath(appKey) {
   return path.join(CONFIG_DIR, `${appKey}.json`);
 }
 
+/** @param {string} appKey */
 function authPath(appKey) {
   return path.join(CONFIG_DIR, `${appKey}.auth.json`);
 }
@@ -45,6 +59,8 @@ function listAppKeys() {
 /**
  * Resolve which app config to use. Explicit key wins; otherwise the single
  * existing config; otherwise fail with guidance.
+ * @param {string} [explicit]
+ * @returns {string}
  */
 function resolveAppKey(explicit) {
   if (explicit) return explicit;
@@ -60,6 +76,11 @@ function resolveAppKey(explicit) {
   );
 }
 
+/**
+ * @param {Record<string, any>} base
+ * @param {Record<string, any>} [patch]
+ * @returns {Record<string, any>}
+ */
 function deepMerge(base, patch) {
   const out = { ...base };
   for (const [k, v] of Object.entries(patch || {})) {
@@ -72,6 +93,10 @@ function deepMerge(base, patch) {
   return out;
 }
 
+/**
+ * @param {string} appKey
+ * @returns {AppConfig}
+ */
 function loadConfig(appKey) {
   const file = configPath(appKey);
   if (!fs.existsSync(file)) {
@@ -93,10 +118,14 @@ function loadConfig(appKey) {
   }
   if (!config.storageState) config.storageState = authPath(appKey);
   config.storageState = expandHome(config.storageState);
-  return config;
+  return /** @type {AppConfig} */ (config);
 }
 
-/** Merge a patch into the config file, creating it if needed. */
+/**
+ * Merge a patch into the config file, creating it if needed.
+ * @param {string} appKey
+ * @param {Record<string, any>} patch
+ */
 function saveConfig(appKey, patch) {
   fs.mkdirSync(CONFIG_DIR, { recursive: true });
   const file = configPath(appKey);
@@ -110,8 +139,13 @@ function saveConfig(appKey, patch) {
   return merged;
 }
 
-/** Minimal argv parser: --flag value / --flag (boolean). */
+/**
+ * Minimal argv parser: --flag value / --flag (boolean).
+ * @param {string[]} argv
+ * @returns {Args}
+ */
 function parseArgs(argv) {
+  /** @type {Args} */
   const args = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];

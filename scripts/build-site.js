@@ -32,14 +32,17 @@ ul.docs time { color: #666; font-size: 0.85rem; float: right; }
 code { background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
 `;
 
+/** @param {unknown} s */
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // Draftness here keys off meta.status (draft|approved|published); the
 // update-check sweep keys off meta.publish.url. SKILL.md sets both at publish
 // time, so they agree unless meta.json was hand-edited.
+/** @param {string} status */
 const badge = (status) => (status === 'published' ? '' : ' <span class="badge">DRAFT</span>');
 
+/** @param {{title: string, cssHref: string, nav: string, body: string}} parts */
 function shell({ title, cssHref, nav, body }) {
   return `<!doctype html>
 <html lang="en">
@@ -59,8 +62,11 @@ ${body}
 `;
 }
 
+/** @param {{docsDir: string, outDir: string, siteTitle?: string}} opts */
 function buildSite({ docsDir, outDir, siteTitle = 'Docs' }) {
+  /** @type {Array<{slug: string, title: string, status: string, date: string}>} */
   const built = [];
+  /** @type {Array<{dir: string, reason: string}>} */
   const skipped = [];
 
   const entries = fs.existsSync(docsDir)
@@ -137,17 +143,18 @@ function buildSite({ docsDir, outDir, siteTitle = 'Docs' }) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  const appKey = resolveAppKey(args.app);
+  const appKey = resolveAppKey(/** @type {string|undefined} */ (args.app));
   const config = loadConfig(appKey);
   const docsDir = path.resolve(config.capture.outputDir);
   // Only a dir we created is ours to delete on the zero-docs path.
   const ownsOutDir = !args.out;
   const outDir = ownsOutDir
     ? fs.mkdtempSync(path.join(os.tmpdir(), 'docs-site-'))
-    : path.resolve(args.out);
+    : path.resolve(String(args.out));
 
-  const report = buildSite({ docsDir, outDir, siteTitle: `${appKey} docs` });
-  report.pagesProject = (config.deploy && config.deploy.pagesProject) || `${appKey}-docs`;
+  const report = Object.assign(buildSite({ docsDir, outDir, siteTitle: `${appKey} docs` }), {
+    pagesProject: (config.deploy && config.deploy.pagesProject) || `${appKey}-docs`,
+  });
 
   if (report.built.length === 0) {
     console.error(`No docs found in ${docsDir} — nothing to build.`);
