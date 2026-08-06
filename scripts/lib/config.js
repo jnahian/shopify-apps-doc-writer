@@ -52,12 +52,12 @@ function sweepPath(appKey) {
   return path.join(CONFIG_DIR, `${appKey}.sweep.json`);
 }
 
-/** App keys that have a config file (excludes *.auth.json). */
+/** App keys that have a config file (excludes *.auth.json and *.sweep.json). */
 function listAppKeys() {
   if (!fs.existsSync(CONFIG_DIR)) return [];
   return fs
     .readdirSync(CONFIG_DIR)
-    .filter((f) => f.endsWith('.json') && !f.endsWith('.auth.json'))
+    .filter((f) => f.endsWith('.json') && !f.endsWith('.auth.json') && !f.endsWith('.sweep.json'))
     .map((f) => f.replace(/\.json$/, ''));
 }
 

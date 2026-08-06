@@ -148,8 +148,8 @@ function main() {
     );
     process.exit(1);
   }
-  const appKey = resolveAppKey(/** @type {string|undefined} */ (typeof args.app === 'string' ? args.app : undefined));
   try {
+    const appKey = resolveAppKey(/** @type {string|undefined} */ (typeof args.app === 'string' ? args.app : undefined));
     if (args.install) install({ appKey, at: typeof args.at === 'string' ? args.at : '03:00', docsRepo: process.cwd() });
     else if (args.uninstall) uninstall(appKey);
     else status(appKey);

@@ -94,4 +94,22 @@ assert.strictEqual(
   'sweepPath lives in CONFIG_DIR'
 );
 
-console.log('ok — config defaults merge, app-key resolution, arg parsing, and failure guidance');
+// Sweep records must not masquerade as app configs. After a scheduled sweep runs,
+// the sweep-result file lives in CONFIG_DIR alongside the app config. listAppKeys
+// must ignore *.sweep.json so resolveAppKey's single-config fallback still works.
+// Clear prior configs for a clean test.
+fs.rmSync(CONFIG_DIR, { recursive: true, force: true });
+saveConfig('storeseo', { store: 's.myshopify.com', appHandle: 'storeseo' });
+fs.writeFileSync(sweepPath('storeseo'), '{"at": "2026-08-07T03:00:00Z", "status": "ok"}');
+assert.deepStrictEqual(
+  listAppKeys(),
+  ['storeseo'],
+  'sweep.json excluded from listAppKeys'
+);
+assert.strictEqual(
+  resolveAppKey(),
+  'storeseo',
+  'single-config fallback still works when sweep.json is present'
+);
+
+console.log('ok — config defaults merge, app-key resolution, arg parsing, failure guidance, and sweep-record filtering');
