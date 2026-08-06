@@ -47,6 +47,11 @@ function authPath(appKey) {
   return path.join(CONFIG_DIR, `${appKey}.auth.json`);
 }
 
+/** Latest scheduled-sweep result for an app (written by scripts/sweep.js). @param {string} appKey */
+function sweepPath(appKey) {
+  return path.join(CONFIG_DIR, `${appKey}.sweep.json`);
+}
+
 /** App keys that have a config file (excludes *.auth.json). */
 function listAppKeys() {
   if (!fs.existsSync(CONFIG_DIR)) return [];
@@ -168,6 +173,7 @@ module.exports = {
   expandHome,
   configPath,
   authPath,
+  sweepPath,
   listAppKeys,
   resolveAppKey,
   loadConfig,

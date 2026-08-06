@@ -86,4 +86,12 @@ const merged = saveConfig('other', { publish: { target: 'google-docs' } });
 assert.strictEqual(merged.store, 'o.myshopify.com', 'existing fields survive a patch');
 assert.strictEqual(loadConfig('other').publish.target, 'google-docs', 'patch persisted');
 
+// sweepPath: sibling of configPath/authPath, one record per app.
+const { sweepPath } = require('./config');
+assert.strictEqual(
+  sweepPath('storeseo'),
+  path.join(CONFIG_DIR, 'storeseo.sweep.json'),
+  'sweepPath lives in CONFIG_DIR'
+);
+
 console.log('ok — config defaults merge, app-key resolution, arg parsing, and failure guidance');
