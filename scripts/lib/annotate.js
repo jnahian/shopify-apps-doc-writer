@@ -72,4 +72,70 @@ function validateAnnotations(annotate) {
   return null;
 }
 
-module.exports = { validateAnnotations };
+/**
+ * @typedef {{type: 'highlight', x: number, y: number, width: number, height: number,
+ *   color: string, strokeWidth: number, radius: number}} HighlightGeometry
+ * @typedef {{type: 'blur', x: number, y: number, width: number, height: number,
+ *   blur: number, fill?: string}} BlurGeometry
+ * @typedef {{type: 'arrow', tip: {x: number, y: number}, tail: {x: number, y: number},
+ *   color: string, strokeWidth: number}} ArrowGeometry
+ * @typedef {HighlightGeometry|BlurGeometry|ArrowGeometry} Geometry
+ */
+
+/**
+ * Arrow approach axis per side, pointing *away* from the target.
+ * @type {Record<Side, {dx: number, dy: number}>}
+ */
+const AXIS = {
+  left: { dx: -1, dy: 0 },
+  right: { dx: 1, dy: 0 },
+  top: { dx: 0, dy: -1 },
+  bottom: { dx: 0, dy: 1 },
+};
+
+/**
+ * Anchor an annotation to a live bounding box. All output coordinates are
+ * integers — boundingBox() returns fractional CSS pixels, and fractional
+ * overlay positions invite anti-aliasing differences between runs.
+ * @param {Box} box
+ * @param {Annotation} ann
+ * @returns {Geometry}
+ */
+function resolveGeometry(box, ann) {
+  const ox = Math.round((ann.offset && ann.offset.x) || 0);
+  const oy = Math.round((ann.offset && ann.offset.y) || 0);
+  const color = ann.color !== undefined ? ann.color : DEFAULT_COLOR;
+  const strokeWidth = ann.strokeWidth !== undefined ? ann.strokeWidth : 3;
+
+  if (ann.type === 'arrow') {
+    const side = ann.side !== undefined ? ann.side : 'left';
+    const length = Math.round(ann.length !== undefined ? ann.length : 56);
+    const gap = Math.round(ann.gap !== undefined ? ann.gap : 8);
+    const { dx, dy } = AXIS[side];
+    const midX = box.x + (dx === 0 ? box.width / 2 : dx === 1 ? box.width : 0);
+    const midY = box.y + (dy === 0 ? box.height / 2 : dy === 1 ? box.height : 0);
+    const tip = { x: Math.round(midX + dx * gap) + ox, y: Math.round(midY + dy * gap) + oy };
+    const tail = { x: tip.x + dx * length, y: tip.y + dy * length };
+    return { type: 'arrow', tip, tail, color, strokeWidth };
+  }
+
+  const padding = Math.round(
+    ann.padding !== undefined ? ann.padding : ann.type === 'highlight' ? 4 : 0
+  );
+  const x = Math.round(box.x) - padding + ox;
+  const y = Math.round(box.y) - padding + oy;
+  const width = Math.round(box.width) + 2 * padding;
+  const height = Math.round(box.height) + 2 * padding;
+
+  if (ann.type === 'highlight') {
+    const radius = ann.radius !== undefined ? ann.radius : 6;
+    return { type: 'highlight', x, y, width, height, color, strokeWidth, radius };
+  }
+
+  /** @type {BlurGeometry} */
+  const g = { type: 'blur', x, y, width, height, blur: ann.blur !== undefined ? ann.blur : 12 };
+  if (ann.fill !== undefined) g.fill = ann.fill;
+  return g;
+}
+
+module.exports = { validateAnnotations, resolveGeometry };
