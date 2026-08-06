@@ -9,6 +9,7 @@
   "scripts": {
     "setup-auth": "node scripts/setup-auth.js",
     "capture": "node scripts/capture.js",
+    "test": "node --test",
     "typecheck": "tsc"
   },
   "dependencies": {
