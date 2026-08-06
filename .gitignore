@@ -16,3 +16,6 @@ docs/*
 # OS noise
 .DS_Store
 .superpowers/
+
+# Worktrees
+.claude/worktrees/
