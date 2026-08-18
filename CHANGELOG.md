@@ -1,12 +1,38 @@
 # Changelog
 
-Notable changes to the `shopify-apps-doc-writer` plugin. Format follows
+Notable changes to the `doc-writer` plugin. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [semver](https://semver.org).
 
 **Installed users only receive a change once `version` in
 `.claude-plugin/plugin.json` is bumped** — Claude Code uses that string as its
 update cache key, so merging to `main` alone ships nothing.
+
+## [0.5.0] - 2026-08-18
+
+### Changed
+
+- **The plugin is now called `doc-writer`** (was `shopify-apps-doc-writer`).
+  Claude Code identifies an installed plugin by name, so this is a new identity
+  rather than an update — `/plugin update` will not carry you across. Install
+  the new name and drop the old one:
+
+  ```
+  /plugin install doc-writer@shopify-apps-doc-writer
+  /plugin uninstall shopify-apps-doc-writer@shopify-apps-doc-writer
+  ```
+
+  The marketplace keeps its name, which is why the reference reads
+  `doc-writer@shopify-apps-doc-writer`; you don't need to re-add it.
+
+  **Nothing on disk moves.** `~/.config/shopify-apps-doc-writer/` keeps your
+  config and auth (no re-login), the launchd label
+  `com.shopify-apps-doc-writer.sweep.<key>` is unchanged, so an installed
+  `/docs-schedule` keeps firing and `/docs-schedule off` still finds it, and
+  the saved Chrome profile stays put. Those paths are deliberately decoupled
+  from the display name so a rename never costs you a re-login or leaves an
+  orphaned daily job. Your slash commands are unchanged; skill ids now read
+  `doc-writer:…`.
 
 ## [0.4.0] - 2026-08-18
 

@@ -1,10 +1,10 @@
 {
   "name": "shopify-apps-doc-writer",
   "owner": { "name": "jnahian" },
-  "description": "Marketplace for the shopify-apps-doc-writer Claude Code plugin.",
+  "description": "Marketplace for the doc-writer Claude Code plugin.",
   "plugins": [
     {
-      "name": "shopify-apps-doc-writer",
+      "name": "doc-writer",
       "source": "./",
       "description": "Merchant-facing feature docs for embedded Shopify apps, with real, reproducible screenshots captured via Playwright."
     }

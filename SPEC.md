@@ -1,4 +1,4 @@
-# shopify-apps-doc-writer — Plugin Specification
+# doc-writer — Plugin Specification
 
 A Claude Code plugin that writes merchant-facing feature documentation for embedded Shopify apps, capturing real screenshots via Playwright and publishing to a user-configured destination (local markdown, Google Docs, or any connected MCP).
 

@@ -71,7 +71,7 @@ try {
 
 fs.writeSync(
   1,
-  'shopify-apps-doc-writer: installing Playwright in the background (first run) — ' +
+  'doc-writer: installing Playwright in the background (first run) — ' +
     'screenshot capture will be ready shortly.\n'
 );
 

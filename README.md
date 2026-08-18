@@ -1,4 +1,4 @@
-# shopify-apps-doc-writer
+# doc-writer
 
 A Claude Code plugin that writes **merchant-facing feature documentation** for embedded Shopify apps — real prose plus real, reproducible screenshots captured via Playwright — and optionally publishes it to Google Docs or any connected MCP destination.
 
@@ -55,10 +55,12 @@ still happens through `/docs-check`, with you present.
 
 ```bash
 claude plugin marketplace add https://github.com/jnahian/shopify-apps-doc-writer
-claude plugin install shopify-apps-doc-writer@shopify-apps-doc-writer
+claude plugin install doc-writer@shopify-apps-doc-writer
 ```
 
-Or from inside Claude Code: `/plugin marketplace add jnahian/shopify-apps-doc-writer`, then `/plugin install shopify-apps-doc-writer@shopify-apps-doc-writer`.
+Or from inside Claude Code: `/plugin marketplace add jnahian/shopify-apps-doc-writer`, then `/plugin install doc-writer@shopify-apps-doc-writer`.
+
+The plugin is `doc-writer`; the marketplace it ships from is still `shopify-apps-doc-writer` (the repo name), which is why the reference pairs the two.
 
 Beyond that, there's nothing to install by hand. The five writing skills ship with the plugin (in `skills/vendored/`, MIT — see its `VERSIONS.md`), and `npm install` runs automatically on your first session — a `SessionStart` hook (`hooks/ensure-deps.js`) installs Playwright in the background when it's missing, and again after a plugin update.
 
@@ -74,7 +76,7 @@ Claude Code refreshes the marketplace on its own, but you can pull a new release
 
 ```bash
 claude plugin marketplace update shopify-apps-doc-writer
-claude plugin update shopify-apps-doc-writer@shopify-apps-doc-writer
+claude plugin update doc-writer@shopify-apps-doc-writer
 ```
 
 Updates arrive **only when `version` in `.claude-plugin/plugin.json` changes** — that string is Claude Code's update cache key, so commits pushed without a bump never reach an installed copy. See `CHANGELOG.md` for what each version contains.

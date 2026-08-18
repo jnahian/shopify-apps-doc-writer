@@ -1,9 +1,9 @@
 ---
-description: Set up shopify-apps-doc-writer — auth, publish target, and product context (resumable, phased)
+description: Set up doc-writer — auth, publish target, and product context (resumable, phased)
 argument-hint: "[auth|publish|context] [--app <key>]"
 ---
 
-Run the shopify-apps-doc-writer setup wizard. Argument given: **$ARGUMENTS**
+Run the doc-writer setup wizard. Argument given: **$ARGUMENTS**
 
 - No phase argument → run all three phases in order.
 - `auth`, `publish`, or `context` → run only that phase.
