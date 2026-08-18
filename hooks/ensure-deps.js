@@ -15,11 +15,18 @@
  *    runs; if not, capture.js already fails gracefully with an install hint.
  *  - A lock guards against two parallel sessions installing at once.
  *
- * Always exits 0 — a bootstrap must never break session start.
+ * Always exits 0 — a bootstrap must never break session start. Everything it
+ * prints goes through fs.writeSync(1, …) rather than console.log: stdout here
+ * is the pipe Claude Code reads as session context, writes to a pipe are
+ * async, and the process.exit(0) a few lines later drops whatever is still
+ * queued — which would be the sweep notices, this hook's entire user-facing
+ * output.
  *
  * Note: this installs the `playwright` npm package only. The default engine
  * (system Google Chrome, channel:'chrome' / CDP) needs no browser download;
  * chromium/firefox/webkit download on demand at capture time, not here.
+ *
+ * Also refreshes the plugin-root pointer for scheduled sweeps and prints any sweep notices (see hooks/sweep-notice.js).
  */
 
 const { spawn } = require('child_process');
@@ -27,6 +34,20 @@ const fs = require('fs');
 const path = require('path');
 
 const root = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
+
+// Scheduled-sweep support (0.4.0): keep the plugin-root pointer fresh so the
+// launchd shim survives version-numbered plugin-path changes, and surface the
+// latest sweep results as session context. Best-effort — never break startup.
+try {
+  const { CONFIG_DIR } = require('../scripts/lib/config');
+  fs.mkdirSync(CONFIG_DIR, { recursive: true });
+  fs.writeFileSync(path.join(CONFIG_DIR, 'plugin-root'), root + '\n');
+  for (const line of require('./sweep-notice').collectNotices(CONFIG_DIR, Date.now())) {
+    fs.writeSync(1, line + '\n');
+  }
+} catch {
+  /* hook must always exit 0 with no drama */
+}
 
 // Already installed? Nothing to do — this is every session after the first.
 try {
@@ -48,9 +69,10 @@ try {
   /* best-effort lock; proceed regardless */
 }
 
-console.log(
+fs.writeSync(
+  1,
   'shopify-apps-doc-writer: installing Playwright in the background (first run) — ' +
-    'screenshot capture will be ready shortly.'
+    'screenshot capture will be ready shortly.\n'
 );
 
 // shell:true so `npm` resolves to npm.cmd on Windows.

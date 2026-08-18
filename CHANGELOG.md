@@ -8,7 +8,7 @@ Notable changes to the `shopify-apps-doc-writer` plugin. Format follows
 `.claude-plugin/plugin.json` is bumped** — Claude Code uses that string as its
 update cache key, so merging to `main` alone ships nothing.
 
-## [0.4.0] - 2026-08-07
+## [0.4.0] - 2026-08-18
 
 ### Added
 
@@ -22,6 +22,25 @@ update cache key, so merging to `main` alone ships nothing.
   region being the viewport for `crop: "full-admin"` and the app iframe's rect
   for `crop: "iframe"`. Every style knob is optional with house defaults; see
   the manifest schema reference for the full table.
+- `/docs-schedule` — a daily background staleness sweep on macOS (launchd),
+  fully local and report-only. Results surface as a one-line notice at your
+  next session start: stale docs route to `/update-docs`, auth expiry to
+  `/docs-setup auth`, bot challenges to a headed `/docs-check`. Nothing
+  publishes and nothing posts to Slack unattended. Backed by
+  `scripts/sweep.js` and `scripts/schedule-sweep.js`; the schedule survives
+  plugin updates via a plugin-root pointer the session-start hook refreshes.
+
+  Guarded against the ways an unattended job fails quietly: installing from a
+  directory with no docs is refused (and a sweep that checks zero docs records
+  an error, never `ok`), `update-check` is capped at one hour per run so a hung
+  capture cannot block every later run, a stale plugin-root pointer writes its
+  own record so the next session says how to fix it instead of waiting two days
+  for a generic "stuck" notice, and the session-start notice carries the
+  recorded reason rather than only a log path.
+
+(Roadmap items 0.4 and 0.6, released together as 0.4.0 — plugin versions follow
+release order, not roadmap numbering, because the update cache key must only
+ever move forward. Re-publish diffing, the 0.5 roadmap item, remains queued.)
 
 ## [0.3.0] - 2026-08-06
 
