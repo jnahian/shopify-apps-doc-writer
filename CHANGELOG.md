@@ -8,6 +8,25 @@ Notable changes to the `shopify-apps-doc-writer` plugin. Format follows
 `.claude-plugin/plugin.json` is bumped** — Claude Code uses that string as its
 update cache key, so merging to `main` alone ships nothing.
 
+## [0.5.0] - 2026-08-18
+
+Ships the roadmap's 0.5 item, the last one committed for v2 (0.4 and 0.6
+shipped together as 0.4.0).
+
+### Added
+
+- Re-publish clobber check: `/shopify-apps-doc-writer:update-docs` now fetches
+  the live external doc before gate 3 and shows any manual edits a re-push
+  would revert — verbatim, report-only; the user still gates. Backed by a
+  publish-time snapshot (`docs/<slug>/.published-snapshot.md`, the text read
+  back during publish verification — same fetch path both times, so conversion
+  noise cancels out) and `scripts/lib/republish-diff.js`, an exact line diff.
+- Degraded modes warn at gate 3, never silently skip: docs published before
+  0.5.0 have no snapshot (this publish writes one, so the check works from
+  the next re-publish); a failed fetch or an `mcp` connector without a read
+  tool says "could not check for manual edits". Google Docs is the committed
+  path.
+
 ## [0.4.1] - 2026-08-18
 
 ### Fixed
