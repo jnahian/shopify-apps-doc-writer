@@ -37,6 +37,7 @@ const {
   resolveGeometry,
   overlayHtml,
   checkGeometryFits,
+  geometryRelativeTo,
 } = require('./lib/annotate');
 
 const EXIT_AUTH = 10;
@@ -261,18 +262,33 @@ async function injectOverlay(page, geometries) {
  * before it. That shift is identical on every re-shoot, so the byte-stability
  * check happily returns a screenshot with every box in the wrong place. Only
  * re-measuring afterwards catches it.
+ *
+ * Both measurements are compared relative to the capture region, not in raw
+ * viewport coordinates: an element screenshot scrolls the iframe into view and
+ * does not restore the scroll, so every `crop: "iframe"` shot would otherwise
+ * read as "everything moved" — burning a full extra settle cycle each time,
+ * and failing outright on any shot that also has a real reason to retry.
  * @param {Page} page
  * @param {Shot} shot
  * @param {() => Promise<Buffer>} shoot
  * @param {() => Promise<import('./lib/annotate').Box>} captureBounds
  */
 async function captureAnnotated(page, shot, shoot, captureBounds) {
+  /**
+   * @param {import('./lib/annotate').Geometry[]} geometries
+   * @param {import('./lib/annotate').Box} bounds
+   */
+  const signature = (geometries, bounds) =>
+    JSON.stringify(geometries.map((g) => geometryRelativeTo(g, bounds)));
+
   for (let attempt = 1; ; attempt++) {
-    const geometries = await measureAnnotations(page, shot, await captureBounds());
+    const bounds = await captureBounds();
+    const geometries = await measureAnnotations(page, shot, bounds);
     await injectOverlay(page, geometries);
     const buf = await settle(page, shoot);
-    const after = await measureAnnotations(page, shot, await captureBounds());
-    if (JSON.stringify(after) === JSON.stringify(geometries)) return buf;
+    const boundsAfter = await captureBounds();
+    const after = await measureAnnotations(page, shot, boundsAfter);
+    if (signature(after, boundsAfter) === signature(geometries, bounds)) return buf;
     if (attempt >= ANNOTATE_MAX_TRIES) {
       const err = /** @type {CodedError} */ (
         new Error(
@@ -607,4 +623,12 @@ if (require.main === module) {
   });
 }
 
-module.exports = { resolveOutDir, resolveBrowser, checkReadOnly, validateManifest };
+module.exports = {
+  resolveOutDir,
+  resolveBrowser,
+  checkReadOnly,
+  validateManifest,
+  measureAnnotations,
+  injectOverlay,
+  captureAnnotated,
+};

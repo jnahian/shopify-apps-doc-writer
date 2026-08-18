@@ -272,10 +272,34 @@ function checkGeometryFits(g, bounds) {
   return overlaps ? null : 'is outside the capture region';
 }
 
+/**
+ * The same geometry expressed relative to `origin` — the capture region's
+ * top-left corner. Two measurements of an unchanged page taken at different
+ * scroll positions have different viewport coordinates but identical relative
+ * ones, and the region is what the screenshot keeps: an element screenshot
+ * scrolls its target into view and does not reliably restore the scroll
+ * afterwards, so comparing raw viewport coordinates would report a moved
+ * target on every `crop: "iframe"` shot.
+ * @param {Geometry} g
+ * @param {Box} origin
+ * @returns {Geometry}
+ */
+function geometryRelativeTo(g, origin) {
+  if (g.type === 'arrow') {
+    return {
+      ...g,
+      tip: { x: g.tip.x - origin.x, y: g.tip.y - origin.y },
+      tail: { x: g.tail.x - origin.x, y: g.tail.y - origin.y },
+    };
+  }
+  return { ...g, x: g.x - origin.x, y: g.y - origin.y };
+}
+
 module.exports = {
   validateAnnotations,
   resolveGeometry,
   overlayHtml,
   geometryBounds,
   checkGeometryFits,
+  geometryRelativeTo,
 };

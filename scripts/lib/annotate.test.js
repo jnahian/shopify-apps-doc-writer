@@ -10,6 +10,7 @@ const {
   overlayHtml,
   geometryBounds,
   checkGeometryFits,
+  geometryRelativeTo,
 } = require('./annotate');
 
 assert.strictEqual(validateAnnotations(undefined), null, 'absent annotate is fine');
@@ -230,3 +231,33 @@ assert.match(
 );
 
 console.log('ok — checkGeometryFits');
+
+// --- geometryRelativeTo ---
+
+// Two measurements of an unchanged page taken at different scroll positions
+// differ in viewport coordinates but not relative to the capture region — and
+// the region is what the screenshot keeps, so that is what must be compared.
+const beforeScroll = resolveGeometry({ x: 120, y: 1050, width: 200, height: 80 }, { type: 'blur', target: '#t' });
+const afterScroll = resolveGeometry({ x: 120, y: 200, width: 200, height: 80 }, { type: 'blur', target: '#t' });
+assert.deepStrictEqual(
+  geometryRelativeTo(beforeScroll, { x: 0, y: 900, width: 800, height: 500 }),
+  geometryRelativeTo(afterScroll, { x: 0, y: 50, width: 800, height: 500 })
+);
+assert.deepStrictEqual(geometryRelativeTo(beforeScroll, { x: 0, y: 900, width: 800, height: 500 }), {
+  type: 'blur', x: 120, y: 150, width: 200, height: 80, blur: 12,
+});
+
+// A real shift inside the region still shows up.
+const shifted = resolveGeometry({ x: 120, y: 240, width: 200, height: 80 }, { type: 'blur', target: '#t' });
+assert.notDeepStrictEqual(
+  geometryRelativeTo(shifted, { x: 0, y: 50, width: 800, height: 500 }),
+  geometryRelativeTo(afterScroll, { x: 0, y: 50, width: 800, height: 500 })
+);
+
+// Arrows translate both ends and keep every other field.
+assert.deepStrictEqual(
+  geometryRelativeTo(resolveGeometry(square, { type: 'arrow', target: '#x' }), { x: 10, y: 20, width: 100, height: 100 }),
+  { type: 'arrow', tip: { x: 82, y: 190 }, tail: { x: 26, y: 190 }, color: '#d72c0d', strokeWidth: 3 }
+);
+
+console.log('ok — geometryRelativeTo');
