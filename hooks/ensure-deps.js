@@ -35,7 +35,7 @@ const path = require('path');
 
 const root = process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..');
 
-// Scheduled-sweep support (0.6.0): keep the plugin-root pointer fresh so the
+// Scheduled-sweep support (0.5.0): keep the plugin-root pointer fresh so the
 // launchd shim survives version-numbered plugin-path changes, and surface the
 // latest sweep results as session context. Best-effort — never break startup.
 try {

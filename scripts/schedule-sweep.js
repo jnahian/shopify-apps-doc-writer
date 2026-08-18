@@ -3,7 +3,7 @@
 
 /**
  * schedule-sweep.js — install/uninstall/status for the daily staleness sweep
- * (macOS launchd only in 0.6.0).
+ * (macOS launchd only in 0.5.0).
  *
  * The plist does NOT point into the plugin: installed plugins live under a
  * version-numbered cache path that changes on every update. It runs a shim in
@@ -197,7 +197,7 @@ function status(appKey) {
 
 function main() {
   if (process.platform !== 'darwin') {
-    console.error('Scheduled sweeps are macOS-only in 0.6.0 (launchd). Linux cron is deferred.');
+    console.error('Scheduled sweeps are macOS-only in 0.5.0 (launchd). Linux cron is deferred.');
     process.exit(1);
   }
   const args = parseArgs(process.argv.slice(2));

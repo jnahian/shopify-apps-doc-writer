@@ -8,7 +8,7 @@ Notable changes to the `shopify-apps-doc-writer` plugin. Format follows
 `.claude-plugin/plugin.json` is bumped** — Claude Code uses that string as its
 update cache key, so merging to `main` alone ships nothing.
 
-## [0.6.0] - 2026-08-07
+## [0.5.0] - 2026-08-07
 
 ### Added
 
@@ -28,8 +28,9 @@ update cache key, so merging to `main` alone ships nothing.
   for a generic "stuck" notice, and the session-start notice carries the
   recorded reason rather than only a log path.
 
-(0.5 re-publish diffing remains queued; the version number tracks the roadmap
-item, not release order.)
+(Roadmap item 0.6; released as 0.5.0 so plugin versions stay in release order
+— the update cache key must only ever move forward. Re-publish diffing, the
+other 0.5 roadmap item, remains queued.)
 
 ## [0.3.0] - 2026-08-06
 
