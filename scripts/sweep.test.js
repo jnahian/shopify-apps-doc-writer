@@ -15,7 +15,7 @@ process.env.USERPROFILE = tmp;
 const assert = require('assert');
 const { spawnSync } = require('child_process');
 const { saveConfig, sweepPath } = require('./lib/config');
-const { classifyOutcome } = require('./sweep');
+const { classifyOutcome, describeSpawnError, SWEEP_TIMEOUT_MS } = require('./sweep');
 
 // --- classifyOutcome: environment-level exits map to their own statuses ---
 assert.deepStrictEqual(classifyOutcome({ exitCode: 10, stdout: '' }), { status: 'auth-expired' });
@@ -70,11 +70,32 @@ assert.deepStrictEqual(driftOut.summary.stale, [
 assert.deepStrictEqual(driftOut.summary.errors, [{ slug: 'broken', error: 'selector-timeout' }]);
 assert.deepStrictEqual(driftOut.summary.skipped, [{ dir: 'not-a-doc', reason: 'no manifest.json' }]);
 
+// A sweep that checked *nothing* is not a clean sweep. The schedule bakes in
+// the cwd it was installed from; if that is not the docs repo, update-check
+// finds no docs and would otherwise report 'ok' forever.
+const emptySweep = { docs: [], skipped: [], checked: 0, anyDrift: false };
+const emptyOut = classifyOutcome({ exitCode: 0, stdout: JSON.stringify(emptySweep) });
+assert.strictEqual(emptyOut.status, 'error');
+assert.match(emptyOut.message || '', /no docs/i);
+assert.match(emptyOut.message || '', /docs-schedule/, 'says how to re-point the schedule');
+
+// A killed (timed-out) child reports null status — must read as an error with
+// a message that says so, not a bare exit code.
+assert.deepStrictEqual(
+  classifyOutcome({ exitCode: null, stdout: '', errorText: 'update-check timed out' }),
+  { status: 'error', message: 'update-check timed out' }
+);
+assert.match(describeSpawnError({ code: 'ETIMEDOUT', message: 'spawnSync ETIMEDOUT' }), /timed out/);
+assert.match(describeSpawnError({ code: 'ETIMEDOUT', message: 'x' }), /60 minutes/);
+assert.strictEqual(describeSpawnError({ code: 'ENOENT', message: 'spawnSync ENOENT' }), 'spawnSync ENOENT');
+assert.strictEqual(describeSpawnError(undefined), '');
+assert.strictEqual(SWEEP_TIMEOUT_MS, 60 * 60 * 1000, 'unattended runs cannot hang forever');
+
 // Per-doc errors alone (no stale docs) are still noteworthy → drift.
 const errOnly = { docs: [{ slug: 'broken', published: null, copy: null, screenshots: null, error: 'capture-failed', anyDrift: false }], skipped: [], checked: 1, anyDrift: false };
 assert.strictEqual(classifyOutcome({ exitCode: 0, stdout: JSON.stringify(errOnly) }).status, 'drift');
 
-// --- CLI integration: no docs dir → checked 0 → ok record written to sweep.json ---
+// --- CLI integration: no docs dir → checked 0 → error record on disk ---
 // update-check's runAll returns {docs: [], checked: 0} for a missing docs dir,
 // so this exercises the full spawn → classify → persist path with no browser.
 saveConfig('teststore', { store: 't.myshopify.com', appHandle: 'teststore' });
@@ -86,7 +107,7 @@ const res = spawnSync(process.execPath, [path.join(__dirname, 'sweep.js'), '--ap
 });
 assert.strictEqual(res.status, 0, `sweep.js exits 0 (stderr: ${res.stderr})`);
 const record = JSON.parse(fs.readFileSync(sweepPath('teststore'), 'utf8'));
-assert.strictEqual(record.status, 'ok');
+assert.strictEqual(record.status, 'error', 'a sweep that checked nothing is not clean');
 assert.strictEqual(record.summary.checked, 0);
 assert.ok(!Number.isNaN(Date.parse(record.at)), 'at is a parsable timestamp');
 

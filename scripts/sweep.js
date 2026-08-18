@@ -20,11 +20,33 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const { parseArgs, resolveAppKey, sweepPath, CONFIG_DIR } = require('./lib/config');
 
+// update-check launches a browser per doc, so a real docs set legitimately
+// runs for a while — but launchd will not start a second copy of a job that
+// is still running, so one hung capture silently kills every future sweep.
+// A generous ceiling, then the record says what happened the next morning.
+const SWEEP_TIMEOUT_MS = 60 * 60 * 1000;
+
 /**
  * @typedef {{slug: string, copyChanged: boolean, shotsChanged: number, total: number, published: boolean|null}} StaleDoc
  * @typedef {{checked: number, stale: StaleDoc[], errors: Array<{slug: string, error: string}>, skipped: Array<{dir: string, reason: string}>}} SweepSummary
  * @typedef {{status: 'ok'|'drift'|'auth-expired'|'bot-challenge'|'error', message?: string, summary?: SweepSummary, raw?: object}} Outcome
  */
+
+/**
+ * Human-readable reason a spawn never produced an exit code.
+ * @param {{code?: string, message: string}} [err] spawnSync's `error`
+ * @returns {string}
+ */
+function describeSpawnError(err) {
+  if (!err) return '';
+  if (err.code === 'ETIMEDOUT') {
+    return (
+      `update-check timed out after ${SWEEP_TIMEOUT_MS / 60000} minutes and was killed — ` +
+      'a capture is probably hung; the next scheduled run starts clean'
+    );
+  }
+  return err.message;
+}
 
 /**
  * Classify a finished `update-check.js --all` run. Per-doc capture errors
@@ -59,6 +81,19 @@ function classifyOutcome({ exitCode, stdout, errorText }) {
     .filter((/** @type {any} */ d) => d.error)
     .map((/** @type {any} */ d) => ({ slug: d.slug, error: d.error }));
   const summary = { checked: report.checked, stale, errors, skipped: report.skipped };
+  // Checking nothing is not a clean bill of health. install() bakes in the cwd
+  // it ran from; point that at anything but the docs repo and every nightly
+  // sweep would otherwise come back 'ok' — silent, forever.
+  if (report.checked === 0) {
+    return {
+      status: 'error',
+      message:
+        'update-check found no docs to check — the schedule is pointing at a directory with no docs. ' +
+        'Re-run /docs-schedule from your docs repo.',
+      summary,
+      raw: report,
+    };
+  }
   return { status: stale.length || errors.length ? 'drift' : 'ok', summary, raw: report };
 }
 
@@ -74,12 +109,18 @@ function main() {
     const res = spawnSync(
       process.execPath,
       [path.join(__dirname, 'update-check.js'), '--all', '--app', appKey],
-      { stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
+      {
+        stdio: ['ignore', 'pipe', 'inherit'],
+        encoding: 'utf8',
+        maxBuffer: 64 * 1024 * 1024,
+        timeout: SWEEP_TIMEOUT_MS,
+        killSignal: 'SIGKILL',
+      }
     );
     outcome = classifyOutcome({
       exitCode: res.status,
       stdout: res.stdout || '',
-      errorText: res.error ? res.error.message : '',
+      errorText: describeSpawnError(res.error),
     });
   } catch (err) {
     // Even a crash leaves a record — a broken sweep must be visible, not absent.
@@ -94,4 +135,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { classifyOutcome };
+module.exports = { classifyOutcome, describeSpawnError, SWEEP_TIMEOUT_MS };

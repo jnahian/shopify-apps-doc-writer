@@ -35,8 +35,13 @@ function formatNotice({ appKey, record, logPath }, now) {
       return `[${appKey}] scheduled sweeps are blocked — auth expired; run /docs-setup auth.`;
     case 'bot-challenge':
       return `[${appKey}] last scheduled sweep (${when}) was bot-challenged; run /docs-check yourself (headed capture) to get a real result.`;
-    case 'error':
-      return `[${appKey}] last scheduled sweep (${when}) failed — see ${logPath}`;
+    case 'error': {
+      // Carry the recorded reason: the shim's stale-pointer record explains
+      // exactly how to recover, and burying that in a log file nobody opens
+      // is the difference between a two-minute fix and a dead schedule.
+      const why = record.message ? String(record.message).split('\n')[0].trim().slice(0, 240) : '';
+      return `[${appKey}] last scheduled sweep (${when}) failed${why ? ` — ${why}` : ''} (log: ${logPath})`;
+    }
     case 'drift': {
       const stale = record.summary.stale.map((/** @type {any} */ s) => s.slug);
       const errs = record.summary.errors.map((/** @type {any} */ e) => `${e.slug} (${e.error})`);

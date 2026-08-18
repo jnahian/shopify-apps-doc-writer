@@ -43,6 +43,13 @@ assert.ok(challenged && /bot-challenged/.test(challenged) && /docs-check/.test(c
 assert.ok(challenged && challenged.includes('2026-08-13 03:00 UTC'), `bot-challenge time is labeled UTC: ${challenged}`);
 const errorResult = notice({ at: '2026-08-13T03:00:00Z', status: 'error', message: 'boom' });
 assert.ok(errorResult && errorResult.includes('/logs/storeseo.sweep.log'), 'error points at the log');
+assert.ok(errorResult && errorResult.includes('boom'), 'the recorded reason reaches the user, not just the log path');
+// A record with no message still reads as a sentence.
+const bareError = notice({ at: '2026-08-13T03:00:00Z', status: 'error' });
+assert.ok(bareError && /failed/.test(bareError) && !/undefined/.test(bareError), `no undefined: ${bareError}`);
+// Multi-line or huge messages are trimmed to one readable line.
+const longError = notice({ at: '2026-08-13T03:00:00Z', status: 'error', message: 'first line\nsecond line' });
+assert.ok(longError && longError.includes('first line') && !longError.includes('second line'), 'one line only');
 assert.ok(errorResult && errorResult.includes('2026-08-13 03:00 UTC'), `error time is labeled UTC: ${errorResult}`);
 
 // Stuck schedule: record older than 2 days wins over its own status.

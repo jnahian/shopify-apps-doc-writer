@@ -20,8 +20,16 @@ update cache key, so merging to `main` alone ships nothing.
   `scripts/sweep.js` and `scripts/schedule-sweep.js`; the schedule survives
   plugin updates via a plugin-root pointer the session-start hook refreshes.
 
-(0.4 annotation pipeline and 0.5 re-publish diffing remain queued; the
-version number tracks the roadmap item, not release order.)
+  Guarded against the ways an unattended job fails quietly: installing from a
+  directory with no docs is refused (and a sweep that checks zero docs records
+  an error, never `ok`), `update-check` is capped at one hour per run so a hung
+  capture cannot block every later run, a stale plugin-root pointer writes its
+  own record so the next session says how to fix it instead of waiting two days
+  for a generic "stuck" notice, and the session-start notice carries the
+  recorded reason rather than only a log path.
+
+(0.5 re-publish diffing remains queued; the version number tracks the roadmap
+item, not release order.)
 
 ## [0.3.0] - 2026-08-06
 
