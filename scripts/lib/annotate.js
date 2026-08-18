@@ -30,6 +30,12 @@ const NUMERIC_KNOBS = ['strokeWidth', 'radius', 'padding', 'length', 'gap', 'blu
 // Polaris critical red — reads as documentation ink, not app UI.
 const DEFAULT_COLOR = '#d72c0d';
 
+// color/fill land inside a style="" declaration list, so an allowlist is the
+// only safe check: a blocklist of quotes and angle brackets still lets ';'
+// through, which closes the declaration and injects arbitrary CSS after it.
+const COLOR =
+  /^(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|[a-zA-Z]+|(?:rgb|rgba|hsl|hsla)\([0-9a-zA-Z.,%\/ -]*\))$/;
+
 /**
  * Validate one shot's `annotate` value. Returns the first problem as a
  * message (the caller prefixes the shot id), or null if valid or absent.
@@ -59,8 +65,8 @@ function validateAnnotations(annotate) {
       if (ann[str] !== undefined && typeof ann[str] !== 'string') {
         return `${at}.${str} must be a string`;
       }
-      if (ann[str] !== undefined && /["<>]/.test(ann[str])) {
-        return `${at}.${str} contains characters not allowed in a color`;
+      if (ann[str] !== undefined && !COLOR.test(ann[str])) {
+        return `${at}.${str} is not a color (use #rgb/#rrggbb, rgb()/rgba()/hsl()/hsla(), or a CSS color name)`;
       }
     }
     if (ann.offset !== undefined) {
@@ -108,7 +114,7 @@ function resolveGeometry(box, ann) {
   const ox = Math.round((ann.offset && ann.offset.x) || 0);
   const oy = Math.round((ann.offset && ann.offset.y) || 0);
   const color = ann.color !== undefined ? ann.color : DEFAULT_COLOR;
-  const strokeWidth = ann.strokeWidth !== undefined ? ann.strokeWidth : 3;
+  const strokeWidth = Math.round(ann.strokeWidth !== undefined ? ann.strokeWidth : 3);
 
   if (ann.type === 'arrow') {
     const side = ann.side !== undefined ? ann.side : 'left';
@@ -135,7 +141,7 @@ function resolveGeometry(box, ann) {
   const height = Math.round(box.height) + 2 * padding;
 
   if (ann.type === 'highlight') {
-    const radius = ann.radius !== undefined ? ann.radius : 6;
+    const radius = Math.round(ann.radius !== undefined ? ann.radius : 6);
     return { type: 'highlight', x, y, width, height, color, strokeWidth, radius };
   }
 
@@ -147,8 +153,13 @@ function resolveGeometry(box, ann) {
 
 /**
  * Render geometries to the innerHTML of the overlay container. Elements in
- * array order (drawn back-to-front), all position:fixed so page layout never
- * shifts. Deterministic: identical input → identical string.
+ * array order (drawn back-to-front), all position:absolute so page layout
+ * never shifts. Absolute rather than fixed: an element screenshot
+ * (`crop: "iframe"`) scrolls its target into view and clips in *document*
+ * space, and a fixed overlay does not scroll with it — the container carries
+ * the viewport→document offset instead (see applyAnnotations in capture.js).
+ * Coordinates here stay in viewport space.
+ * Deterministic: identical input → identical string.
  * @param {Geometry[]} geometries
  * @returns {string}
  */
@@ -160,7 +171,7 @@ function overlayHtml(geometries) {
 function geometryHtml(g) {
   if (g.type === 'highlight') {
     return (
-      `<div style="position:fixed;left:${g.x}px;top:${g.y}px;width:${g.width}px;height:${g.height}px;` +
+      `<div style="position:absolute;left:${g.x}px;top:${g.y}px;width:${g.width}px;height:${g.height}px;` +
       `border:${g.strokeWidth}px solid ${g.color};border-radius:${g.radius}px;box-sizing:border-box"></div>`
     );
   }
@@ -170,7 +181,7 @@ function geometryHtml(g) {
         ? `background:${g.fill}`
         : `backdrop-filter:blur(${g.blur}px);-webkit-backdrop-filter:blur(${g.blur}px)`;
     return (
-      `<div style="position:fixed;left:${g.x}px;top:${g.y}px;` +
+      `<div style="position:absolute;left:${g.x}px;top:${g.y}px;` +
       `width:${g.width}px;height:${g.height}px;${paint}"></div>`
     );
   }
@@ -187,11 +198,7 @@ function arrowHtml(g) {
   const { tip, tail, color, strokeWidth } = g;
   const headLen = strokeWidth * 4;
   const headHalf = strokeWidth * 2;
-  const margin = strokeWidth * 3; // covers head half-width + round linecap
-  const minX = Math.min(tip.x, tail.x) - margin;
-  const minY = Math.min(tip.y, tail.y) - margin;
-  const width = Math.abs(tip.x - tail.x) + 2 * margin;
-  const height = Math.abs(tip.y - tail.y) + 2 * margin;
+  const { x: minX, y: minY, width, height } = geometryBounds(g);
   // Local (svg) coordinates.
   const t = { x: tip.x - minX, y: tip.y - minY };
   const b = { x: tail.x - minX, y: tail.y - minY };
@@ -202,7 +209,7 @@ function arrowHtml(g) {
   const p1 = { x: base.x - dy * headHalf, y: base.y - dx * headHalf };
   const p2 = { x: base.x + dy * headHalf, y: base.y + dx * headHalf };
   return (
-    `<svg style="position:fixed;left:${minX}px;top:${minY}px" width="${width}" height="${height}" ` +
+    `<svg style="position:absolute;left:${minX}px;top:${minY}px" width="${width}" height="${height}" ` +
     `viewBox="0 0 ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg">` +
     `<line x1="${b.x}" y1="${b.y}" x2="${base.x}" y2="${base.y}" ` +
     `stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>` +
@@ -212,20 +219,63 @@ function arrowHtml(g) {
 }
 
 /**
- * True if any part of the box lies inside the viewport. An off-viewport
- * target cannot be honestly annotated — position:fixed overlays outside the
- * visual viewport silently vanish from viewport screenshots — so capture
- * must fail loudly instead.
- * @param {Box} box
- * @param {{width: number, height: number}} viewport
+ * The rect an annotation actually paints, in the same viewport space as
+ * resolveGeometry's output. Arrows extend past tip and tail by the head
+ * half-width and the round linecap, so they carry a margin.
+ * @param {Geometry} g
+ * @returns {Box}
  */
-function boxInViewport(box, viewport) {
-  return (
-    box.x + box.width > 0 &&
-    box.y + box.height > 0 &&
-    box.x < viewport.width &&
-    box.y < viewport.height
-  );
+function geometryBounds(g) {
+  if (g.type !== 'arrow') return { x: g.x, y: g.y, width: g.width, height: g.height };
+  const margin = g.strokeWidth * 3; // covers head half-width + round linecap
+  return {
+    x: Math.min(g.tip.x, g.tail.x) - margin,
+    y: Math.min(g.tip.y, g.tail.y) - margin,
+    width: Math.abs(g.tip.x - g.tail.x) + 2 * margin,
+    height: Math.abs(g.tip.y - g.tail.y) + 2 * margin,
+  };
 }
 
-module.exports = { validateAnnotations, resolveGeometry, overlayHtml, boxInViewport };
+/**
+ * Why an annotation would not appear correctly in `bounds` — the region the
+ * screenshot keeps, in viewport coordinates: the viewport itself for a
+ * full-admin shot, the app iframe's rect for `crop: "iframe"`. Returns null
+ * if it fits. An annotation that cannot be drawn honestly must fail the
+ * capture instead of silently missing from the PNG.
+ *
+ * Two rules, because we control one shape and not the other. A highlight or
+ * blur traces a live element whose size the manifest author cannot choose —
+ * a table wider than the crop is still worth boxing — so any overlap passes.
+ * An arrow is geometry we synthesise from `side`/`length`/`offset`, and a
+ * clipped arrow points from nowhere, so it must fit entirely.
+ * @param {Geometry} g
+ * @param {Box} bounds
+ * @returns {string|null}
+ */
+function checkGeometryFits(g, bounds) {
+  const r = geometryBounds(g);
+  if (g.type === 'arrow') {
+    const inside =
+      r.x >= bounds.x &&
+      r.y >= bounds.y &&
+      r.x + r.width <= bounds.x + bounds.width &&
+      r.y + r.height <= bounds.y + bounds.height;
+    return inside
+      ? null
+      : 'draws an arrow clipped by the capture region — adjust side, length, or offset';
+  }
+  const overlaps =
+    r.x + r.width > bounds.x &&
+    r.y + r.height > bounds.y &&
+    r.x < bounds.x + bounds.width &&
+    r.y < bounds.y + bounds.height;
+  return overlaps ? null : 'is outside the capture region';
+}
+
+module.exports = {
+  validateAnnotations,
+  resolveGeometry,
+  overlayHtml,
+  geometryBounds,
+  checkGeometryFits,
+};

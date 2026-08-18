@@ -67,7 +67,7 @@ Selectors in actions and `waitFor` are resolved first against the admin page, th
 
 ## Annotations
 
-Optional per-shot `annotate` array. Each annotation anchors to a **selector** (same policy and frame transparency as `waitFor` and actions) and is drawn as a browser overlay just before the screenshot — the annotated PNG is the artifact. Determinism holds: an unchanged UI with an unchanged `annotate` list re-captures byte-identical, so `/docs-check` reports no phantom drift. If a target moves, disappears, or ends up outside the viewport, capture fails with exit `20` instead of drawing a misplaced or missing box. Entries are drawn in order, back-to-front.
+Optional per-shot `annotate` array. Each annotation anchors to a **selector** (same policy and frame transparency as `waitFor` and actions) and is drawn as a browser overlay just before the screenshot — the annotated PNG is the artifact. Determinism holds: an unchanged UI with an unchanged `annotate` list re-captures byte-identical, so `/docs-check` reports no phantom drift. Every target is re-measured after the page settles, and capture fails with exit `20` rather than shipping a misplaced or missing box if a target moves, disappears, or lands outside the **capture region** — the viewport for `crop: "full-admin"`, the app iframe's rect for `crop: "iframe"`. Highlights and blurs need only overlap that region (the element's size isn't yours to choose); an arrow must fit inside it entirely, since `side`/`length`/`offset` are, and a clipped arrow points from nowhere. Entries are drawn in order, back-to-front.
 
 ```json
 "annotate": [
@@ -83,7 +83,7 @@ Optional per-shot `annotate` array. Each annotation anchors to a **selector** (s
 | `arrow` | `color` (`#d72c0d`), `strokeWidth` (3), `side` (`"left"`), `length` (56), `gap` (8) | Arrow pointing at the midpoint of the target's given side, tip `gap` px away |
 | `blur` | `padding` (0), `blur` (12), `fill` (none) | Frosted blur over the target; setting `fill` makes it an opaque redaction box instead |
 
-All types also take `offset: {x, y}` (px, default 0/0) to nudge the anchored position; `padding` grows the box beyond the element's bounds. Every knob is optional — a bare annotation renders in the house style (Polaris critical red, so annotations read as documentation ink, not app UI).
+All types also take `offset: {x, y}` (px, default 0/0) to nudge the anchored position; `padding` grows the box beyond the element's bounds. Every knob is optional — a bare annotation renders in the house style (Polaris critical red, so annotations read as documentation ink, not app UI). `color` and `fill` must be plain CSS colors — `#rgb`/`#rrggbb`/`#rrggbbaa`, `rgb()`/`rgba()`/`hsl()`/`hsla()`, or a color name; anything else is rejected, because these values are written straight into a style attribute.
 
 Annotation targets follow the selector policy but are **exempt from the destructive-pattern check** — they are measured, never interacted with, so highlighting a "Save" button is fine.
 

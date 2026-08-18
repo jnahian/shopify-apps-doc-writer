@@ -7,8 +7,8 @@
  * Usage:
  *   node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--out-dir <dir>] [--browser chrome|msedge|chromium|firefox|webkit] [--headed]
  *
- * Per shot: navigate → run actions → apply wait strategy → inject
- * annotations (if any) → screenshot
+ * Per shot: navigate → run actions → apply wait strategy → measure and inject
+ * annotations (if any, re-checked after the page settles) → screenshot
  * (viewport for crop "full-admin"; app-iframe bounding box for "iframe")
  * → save docs/<slug>/screenshots/<id>.png next to the manifest.
  *
@@ -32,7 +32,12 @@ const {
   findInPageOrIframe,
   applyWaitStrategy,
 } = require('./lib/shopify');
-const { validateAnnotations, resolveGeometry, overlayHtml, boxInViewport } = require('./lib/annotate');
+const {
+  validateAnnotations,
+  resolveGeometry,
+  overlayHtml,
+  checkGeometryFits,
+} = require('./lib/annotate');
 
 const EXIT_AUTH = 10;
 const EXIT_SELECTOR = 20;
@@ -177,21 +182,20 @@ async function runAction(page, action) {
 }
 
 const OVERLAY_ID = '__sadw_annotations';
+const ANNOTATE_MAX_TRIES = 3;
 
 /**
- * Resolve each annotation's target to a live bounding box and inject the
- * overlay into the top document. Runs before settle() so the overlay is part
- * of the render that must stabilise — determinism comes from the same
- * mechanism as the rest of the shot. Fixed-position children clip into
- * `crop: "iframe"` shots too, because element screenshots clip the full page
- * render.
+ * Resolve each annotation's target to a live bounding box and turn it into
+ * draw geometry (viewport coordinates), refusing anything that would not
+ * appear in `bounds` — the region this shot's screenshot keeps.
  * @param {Page} page
  * @param {Shot} shot
+ * @param {import('./lib/annotate').Box} bounds
+ * @returns {Promise<import('./lib/annotate').Geometry[]>}
  */
-async function applyAnnotations(page, shot) {
+async function measureAnnotations(page, shot, bounds) {
   /** @type {import('./lib/annotate').Geometry[]} */
   const geometries = [];
-  const viewport = page.viewportSize();
   for (const ann of shot.annotate || []) {
     const loc = await findInPageOrIframe(page, ann.target, ACTION_TIMEOUT_MS);
     const box = loc && (await loc.boundingBox());
@@ -202,27 +206,84 @@ async function applyAnnotations(page, shot) {
       err.code = 'SELECTOR_TIMEOUT';
       throw err;
     }
-    if (viewport && !boxInViewport(box, viewport)) {
+    const geometry = resolveGeometry(box, ann);
+    const problem = checkGeometryFits(geometry, bounds);
+    if (problem) {
       const err = /** @type {CodedError} */ (
-        new Error(`annotation target is outside the viewport: ${ann.target}`)
+        new Error(`annotation for ${ann.target} ${problem}`)
       );
       err.code = 'SELECTOR_TIMEOUT';
       throw err;
     }
-    geometries.push(resolveGeometry(box, ann));
+    geometries.push(geometry);
   }
+  return geometries;
+}
+
+/**
+ * Inject the overlay into the top document. The children carry viewport
+ * coordinates but the container is absolutely positioned at wherever the
+ * viewport origin sits in the document right now, so the overlay is pinned to
+ * the page content: an element screenshot (`crop: "iframe"`) scrolls its
+ * target into view and clips in document space, and a viewport-anchored
+ * overlay would be offset by exactly that scroll. Measuring the container's
+ * own rect rather than assuming scroll offsets keeps it correct when `body`
+ * is itself positioned.
+ * @param {Page} page
+ * @param {import('./lib/annotate').Geometry[]} geometries
+ */
+async function injectOverlay(page, geometries) {
   await page.evaluate(
     ({ id, html }) => {
       const prev = document.getElementById(id);
       if (prev) prev.remove();
       const el = document.createElement('div');
       el.id = id;
-      el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647';
+      el.style.cssText =
+        'position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:2147483647';
       el.innerHTML = html;
       document.body.appendChild(el);
+      const r = el.getBoundingClientRect();
+      el.style.left = `${-r.left}px`;
+      el.style.top = `${-r.top}px`;
     },
     { id: OVERLAY_ID, html: overlayHtml(geometries) }
   );
+}
+
+/**
+ * Measure → inject → settle → re-measure, until the geometry the overlay was
+ * drawn from is still the geometry the page has.
+ *
+ * settle() waits SETTLE_MIN_MS before its first frame precisely because
+ * third-party widgets keep repainting after `waitFor` resolves; a banner
+ * mounting inside that window shifts the page under an overlay measured
+ * before it. That shift is identical on every re-shoot, so the byte-stability
+ * check happily returns a screenshot with every box in the wrong place. Only
+ * re-measuring afterwards catches it.
+ * @param {Page} page
+ * @param {Shot} shot
+ * @param {() => Promise<Buffer>} shoot
+ * @param {() => Promise<import('./lib/annotate').Box>} captureBounds
+ */
+async function captureAnnotated(page, shot, shoot, captureBounds) {
+  for (let attempt = 1; ; attempt++) {
+    const geometries = await measureAnnotations(page, shot, await captureBounds());
+    await injectOverlay(page, geometries);
+    const buf = await settle(page, shoot);
+    const after = await measureAnnotations(page, shot, await captureBounds());
+    if (JSON.stringify(after) === JSON.stringify(geometries)) return buf;
+    if (attempt >= ANNOTATE_MAX_TRIES) {
+      const err = /** @type {CodedError} */ (
+        new Error(
+          `annotation targets kept moving between measurement and capture after ` +
+            `${ANNOTATE_MAX_TRIES} attempts: ${(shot.annotate || []).map((a) => a.target).join(', ')}`
+        )
+      );
+      err.code = 'SELECTOR_TIMEOUT';
+      throw err;
+    }
+  }
 }
 
 /**
@@ -252,14 +313,12 @@ async function captureShot(page, config, shot, outDir) {
     throw err;
   }
 
-  if (shot.annotate && shot.annotate.length) {
-    await applyAnnotations(page, shot);
-  }
-
   const file = path.join(outDir, `${shot.id}.png`);
 
   /** @type {() => Promise<Buffer>} */
   let shoot;
+  /** Region the saved PNG keeps, in viewport coordinates. @type {() => Promise<import('./lib/annotate').Box>} */
+  let captureBounds;
   if (shot.crop === 'iframe') {
     const frameEl = page.locator(APP_IFRAME_SELECTOR).first();
     if (!(await frameEl.isVisible().catch(() => false))) {
@@ -272,12 +331,32 @@ async function captureShot(page, config, shot, outDir) {
       throw err;
     }
     shoot = () => frameEl.screenshot({ animations: 'disabled' });
+    captureBounds = async () => {
+      const box = await frameEl.boundingBox();
+      if (!box) {
+        const err = /** @type {CodedError} */ (
+          new Error(`shot "${shot.id}": the app iframe (${APP_IFRAME_SELECTOR}) has no box`)
+        );
+        err.code = 'SELECTOR_TIMEOUT';
+        throw err;
+      }
+      return box;
+    };
   } else {
     // viewport = full-admin context shot
     shoot = () => page.screenshot({ animations: 'disabled' });
+    captureBounds = async () => {
+      const vp =
+        page.viewportSize() ||
+        (await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight })));
+      return { x: 0, y: 0, width: vp.width, height: vp.height };
+    };
   }
 
-  const buf = await settle(page, shoot);
+  const buf =
+    shot.annotate && shot.annotate.length
+      ? await captureAnnotated(page, shot, shoot, captureBounds)
+      : await settle(page, shoot);
   fs.writeFileSync(file, buf);
   return file;
 }
@@ -492,8 +571,9 @@ async function main() {
     if (err.code === 'SELECTOR_TIMEOUT') {
       // Every selector times out on a bot interstitial too, and blaming the
       // manifest for that sends the user to fix something that isn't broken.
-      // Classified here rather than at each throw site so it covers all five
-      // (action resolve, waitFor, iframe crop, annotation resolve/off-viewport).
+      // Classified here rather than at each throw site so it covers all of
+      // them (action resolve, waitFor, iframe crop, annotation
+      // resolve/out-of-region/never-settling).
       if (await detectBotChallenge(page)) {
         console.error(
           `${err.message}\nThat page is a bot challenge, not the admin (${page.url()}) — the manifest is fine.` +

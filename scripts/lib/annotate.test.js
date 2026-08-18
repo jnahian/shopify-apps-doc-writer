@@ -4,7 +4,13 @@
 /** Self-check for lib/annotate.js. Run: node scripts/lib/annotate.test.js */
 
 const assert = require('assert');
-const { validateAnnotations, resolveGeometry, overlayHtml, boxInViewport } = require('./annotate');
+const {
+  validateAnnotations,
+  resolveGeometry,
+  overlayHtml,
+  geometryBounds,
+  checkGeometryFits,
+} = require('./annotate');
 
 assert.strictEqual(validateAnnotations(undefined), null, 'absent annotate is fine');
 assert.strictEqual(
@@ -29,13 +35,29 @@ assert.match(validateAnnotations([{ type: 'highlight', target: '#x', offset: { x
 assert.match(validateAnnotations([{ type: 'highlight', target: '#x', strokeWidth: NaN }]) || '', /strokeWidth must be a finite number/);
 assert.match(validateAnnotations([{ type: 'highlight', target: '#x', offset: { y: Infinity } }]) || '', /offset\.y must be a finite number/);
 
-// Fix 3: color/fill strings must not break out of the innerHTML attribute.
+// Fix 3: color/fill are interpolated into a style attribute, so only real
+// color syntax passes — an allowlist, not a blocklist.
 assert.match(
   validateAnnotations([{ type: 'blur', target: '#x', fill: '"><script>' }]) || '',
-  /fill contains characters not allowed in a color/
+  /fill is not a color/
 );
-assert.strictEqual(validateAnnotations([{ type: 'highlight', target: '#x', color: '#1a2b3c' }]), null);
-assert.strictEqual(validateAnnotations([{ type: 'blur', target: '#x', fill: 'rgb(1,2,3)' }]), null);
+// A ';' would close the declaration and inject further CSS (e.g. overriding
+// position), detaching a redaction box from what it is meant to hide.
+assert.match(
+  validateAnnotations([{ type: 'blur', target: '#x', fill: '#000;position:static;top:0;left:0' }]) || '',
+  /fill is not a color/
+);
+assert.match(
+  validateAnnotations([{ type: 'highlight', target: '#x', color: 'red;border:0' }]) || '',
+  /color is not a color/
+);
+assert.match(
+  validateAnnotations([{ type: 'highlight', target: '#x', color: 'url(x)' }]) || '',
+  /color is not a color/
+);
+for (const ok of ['#fff', '#1a2b3c', '#1a2b3cdd', 'red', 'transparent', 'rgb(1,2,3)', 'rgba(1, 2, 3, 0.5)', 'hsl(210 40% 50%)']) {
+  assert.strictEqual(validateAnnotations([{ type: 'blur', target: '#x', fill: ok }]), null, `${ok} is a color`);
+}
 
 console.log('ok — validateAnnotations');
 
@@ -89,6 +111,18 @@ assert.deepStrictEqual(
   { type: 'arrow', tip: { x: 92, y: 210 }, tail: { x: 36, y: 210 }, color: '#d72c0d', strokeWidth: 3 }
 );
 
+// strokeWidth and radius are coordinates too: arrowHtml derives the SVG
+// origin from strokeWidth, so a fractional one reintroduces the fractional
+// positions the integer invariant exists to avoid.
+assert.deepStrictEqual(
+  resolveGeometry(square, { type: 'highlight', target: '#x', strokeWidth: 2.5, radius: 3.4 }),
+  { type: 'highlight', x: 96, y: 196, width: 48, height: 28, color: '#d72c0d', strokeWidth: 3, radius: 3 }
+);
+assert.deepStrictEqual(
+  resolveGeometry(square, { type: 'arrow', target: '#x', strokeWidth: 2.5 }),
+  { type: 'arrow', tip: { x: 92, y: 210 }, tail: { x: 36, y: 210 }, color: '#d72c0d', strokeWidth: 3 }
+);
+
 console.log('ok — resolveGeometry');
 
 // --- overlayHtml ---
@@ -122,32 +156,77 @@ const parts = html.split('<div').filter((p) => p.includes('background:#1a1a1a'))
 assert.strictEqual(parts.length, 1);
 assert.ok(!parts[0].includes('backdrop-filter'), 'fill suppresses blur');
 
-// Everything is fixed-position (4 geometries → 4 fixed elements).
-assert.strictEqual((html.match(/position:fixed/g) || []).length, 4);
+// Everything is absolutely positioned (4 geometries → 4 elements). Absolute,
+// not fixed: an element screenshot clips in document space after scrolling
+// the target into view, and a fixed overlay does not scroll with it.
+assert.strictEqual((html.match(/position:absolute/g) || []).length, 4);
+assert.ok(!html.includes('position:fixed'), 'no fixed positioning survives');
 
 // Arrow SVG spans its own bbox: default-left arrow tip(92,210) tail(36,210),
 // margin 9 → svg at left:27px top:201px, 74x18.
-assert.match(html, /<svg style="position:fixed;left:27px;top:201px" width="74" height="18"/);
+assert.match(html, /<svg style="position:absolute;left:27px;top:201px" width="74" height="18"/);
 
 console.log('ok — overlayHtml');
 
-// --- boxInViewport ---
+// --- geometryBounds ---
 
-const viewport = { width: 1280, height: 800 };
+// A highlight/blur draws exactly its own rect.
+assert.deepStrictEqual(
+  geometryBounds(resolveGeometry(square, { type: 'highlight', target: '#x' })),
+  { x: 96, y: 196, width: 48, height: 28 }
+);
+// An arrow draws beyond tip/tail by the head half-width and round linecap —
+// the same margin arrowHtml uses to size its SVG.
+assert.deepStrictEqual(
+  geometryBounds(resolveGeometry(square, { type: 'arrow', target: '#x' })),
+  { x: 27, y: 201, width: 74, height: 18 }
+);
 
-// Fully inside.
-assert.strictEqual(boxInViewport({ x: 100, y: 100, width: 50, height: 50 }, viewport), true);
+console.log('ok — geometryBounds');
 
-// Partially overlapping an edge.
-assert.strictEqual(boxInViewport({ x: 1260, y: 100, width: 50, height: 50 }, viewport), true);
+// --- checkGeometryFits ---
 
-// Entirely below the fold.
-assert.strictEqual(boxInViewport({ x: 100, y: 900, width: 50, height: 50 }, viewport), false);
+const viewport = { x: 0, y: 0, width: 1280, height: 800 };
+/** @param {{x: number, y: number, width: number, height: number}} b */
+const hl = (b) => resolveGeometry(b, { type: 'highlight', target: '#x', padding: 0 });
 
-// Entirely to the right.
-assert.strictEqual(boxInViewport({ x: 1300, y: 100, width: 50, height: 50 }, viewport), false);
+// Fully inside, and partially overlapping an edge: both fine. A highlight
+// traces a real element, whose size the manifest author does not control.
+assert.strictEqual(checkGeometryFits(hl({ x: 100, y: 100, width: 50, height: 50 }), viewport), null);
+assert.strictEqual(checkGeometryFits(hl({ x: 1260, y: 100, width: 50, height: 50 }), viewport), null);
 
-// Entirely above/left (negative coords, box fully out of view).
-assert.strictEqual(boxInViewport({ x: -100, y: -100, width: 50, height: 50 }, viewport), false);
+// Entirely outside in any direction: nothing would be drawn.
+for (const off of [
+  { x: 100, y: 900, width: 50, height: 50 },
+  { x: 1300, y: 100, width: 50, height: 50 },
+  { x: -100, y: -100, width: 50, height: 50 },
+]) {
+  assert.match(checkGeometryFits(hl(off), viewport) || '', /outside the capture region/);
+}
 
-console.log('ok — boxInViewport');
+// crop: "iframe" bounds are the iframe's rect, not the viewport. A box in the
+// admin's left nav is on-screen but absent from the cropped PNG.
+const iframe = { x: 240, y: 56, width: 1040, height: 744 };
+assert.strictEqual(checkGeometryFits(hl({ x: 300, y: 100, width: 50, height: 50 }), iframe), null);
+assert.match(
+  checkGeometryFits(hl({ x: 20, y: 100, width: 50, height: 50 }), iframe) || '',
+  /outside the capture region/
+);
+
+// Arrows must fit entirely: we choose where they go, and a half-drawn arrow
+// points from nowhere. Default side 'left' on a box at x=20 tails off-canvas.
+assert.match(
+  checkGeometryFits(resolveGeometry({ x: 20, y: 100, width: 40, height: 20 }, { type: 'arrow', target: '#x' }), viewport) || '',
+  /clipped by the capture region.*side, length, or offset/
+);
+assert.strictEqual(
+  checkGeometryFits(resolveGeometry({ x: 20, y: 100, width: 40, height: 20 }, { type: 'arrow', target: '#x', side: 'right' }), viewport),
+  null
+);
+// Same arrow, iframe crop: it fits the viewport but not the iframe rect.
+assert.match(
+  checkGeometryFits(resolveGeometry({ x: 300, y: 100, width: 40, height: 20 }, { type: 'arrow', target: '#x', side: 'left' }), iframe) || '',
+  /clipped by the capture region/
+);
+
+console.log('ok — checkGeometryFits');

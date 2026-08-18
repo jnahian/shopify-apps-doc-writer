@@ -16,10 +16,12 @@ update cache key, so merging to `main` alone ships nothing.
   `arrow` pointers, and `blur`/redaction boxes, anchored to selectors and
   drawn as an in-browser overlay just before the screenshot. Deterministic on
   re-capture: an unchanged UI with an unchanged `annotate` list produces
-  byte-identical PNGs, so `/docs-check` reports no phantom drift. A moved or
-  missing target fails capture with exit 20 instead of drawing a misplaced
-  box. Every style knob is optional with house defaults; see the manifest
-  schema reference for the full table.
+  byte-identical PNGs, so `/docs-check` reports no phantom drift. Targets are
+  re-measured after the page settles, and a moved, missing, or out-of-region
+  target fails capture with exit 20 instead of drawing a misplaced box — the
+  region being the viewport for `crop: "full-admin"` and the app iframe's rect
+  for `crop: "iframe"`. Every style knob is optional with house defaults; see
+  the manifest schema reference for the full table.
 
 ## [0.3.0] - 2026-08-06
 
