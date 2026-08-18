@@ -17,7 +17,7 @@ After any successful external publish, update `docs/<slug>/meta.json`:
 
 and set `status: "published"`. The `contentHash` / `publishedHash` pair is the v2 staleness hook.
 
-**Also save the publish-time snapshot.** Write the text you read back during publish verification to `docs/<slug>/.published-snapshot.md`, committed with the doc. It is the exact baseline `/shopify-apps-doc-writer:update-docs` diffs the live doc against before re-publishing, to detect manual edits a re-push would revert (the clobber check) — same fetch path on both sides, so conversion noise cancels out. Every successful external publish (first or re-) rewrites it. If nothing can be read back (an `mcp` connector with no read tool), skip it and tell the user the next re-publish will not be able to detect manual edits. `build-site.js` ignores the file — it reads only `index.md`.
+**Also save the publish-time snapshot.** Write the text you read back during publish verification to `docs/<slug>/.published-snapshot.md`, committed with the doc. It is the exact baseline `/shopify-apps-doc-writer:update-docs` diffs the live doc against before re-publishing, to detect manual edits a re-push would revert (the clobber check) — same fetch path on both sides, so conversion noise cancels out. The check is report-only: it never blocks a publish and never auto-approves gate 3, and every degraded mode is stated at the gate rather than skipped silently. Every successful external publish (first or re-) rewrites it. If nothing can be read back (an `mcp` connector with no read tool), skip it and tell the user the next re-publish will not be able to detect manual edits. `build-site.js` ignores the file — it reads only `index.md`.
 
 ---
 
