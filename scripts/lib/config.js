@@ -73,7 +73,7 @@ function resolveAppKey(explicit) {
   if (keys.length === 1) return keys[0];
   if (keys.length === 0) {
     throw new Error(
-      `No config found in ${CONFIG_DIR}. Run /docs-setup first.`
+      `No config found in ${CONFIG_DIR}. Run /shopify-apps-doc-writer:docs-setup first.`
     );
   }
   throw new Error(
@@ -106,7 +106,7 @@ function loadConfig(appKey) {
   const file = configPath(appKey);
   if (!fs.existsSync(file)) {
     throw new Error(
-      `Config not found: ${file}. Run /docs-setup (or /docs-setup auth --app ${appKey}).`
+      `Config not found: ${file}. Run /shopify-apps-doc-writer:docs-setup (or /shopify-apps-doc-writer:docs-setup auth --app ${appKey}).`
     );
   }
   let raw;

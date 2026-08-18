@@ -46,7 +46,7 @@ const clean = {
 const okOut = classifyOutcome({ exitCode: 0, stdout: JSON.stringify(clean) });
 assert.strictEqual(okOut.status, 'ok');
 assert.deepStrictEqual(okOut.summary, { checked: 1, stale: [], errors: [], skipped: [] });
-assert.deepStrictEqual(okOut.raw, clean, 'raw report kept for /docs-check reuse');
+assert.deepStrictEqual(okOut.raw, clean, 'raw report kept for /shopify-apps-doc-writer:docs-check reuse');
 
 // Drift and per-doc errors → drift, with the notice-ready summary.
 const drifty = {
@@ -77,7 +77,7 @@ const emptySweep = { docs: [], skipped: [], checked: 0, anyDrift: false };
 const emptyOut = classifyOutcome({ exitCode: 0, stdout: JSON.stringify(emptySweep) });
 assert.strictEqual(emptyOut.status, 'error');
 assert.match(emptyOut.message || '', /no docs/i);
-assert.match(emptyOut.message || '', /docs-schedule/, 'says how to re-point the schedule');
+assert.match(emptyOut.message || '', /shopify-apps-doc-writer:docs-schedule/, 'says how to re-point the schedule');
 
 // A killed (timed-out) child reports null status — must read as an error with
 // a message that says so, not a bare exit code.

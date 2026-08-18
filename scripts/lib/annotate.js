@@ -7,7 +7,7 @@
  * Selector resolution and DOM injection live in capture.js; everything here
  * is deterministic number/string work so it unit-tests without a browser.
  * Determinism is a contract: identical inputs must produce byte-identical
- * HTML, or /docs-check reports phantom drift on every annotated doc.
+ * HTML, or /shopify-apps-doc-writer:docs-check reports phantom drift on every annotated doc.
  */
 
 /**

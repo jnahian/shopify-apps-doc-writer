@@ -19,8 +19,8 @@ npm install                        # auto-runs on first session via hooks/ensure
 
 node scripts/setup-auth.js --app <key> [--store x.myshopify.com] [--handle <app-handle>]
 node scripts/capture.js --manifest docs/<slug>/manifest.json --app <key> [--only <shot-id>] [--headed]
-node scripts/build-site.js --app <key> [--out <dir>]   # docs/ → static site; deployed by /docs-deploy via npx wrangler
-node scripts/update-check.js --all --app <key>          # staleness sweep across all docs (/docs-check)
+node scripts/build-site.js --app <key> [--out <dir>]   # docs/ → static site; deployed by /shopify-apps-doc-writer:docs-deploy via npx wrangler
+node scripts/update-check.js --all --app <key>          # staleness sweep across all docs (/shopify-apps-doc-writer:docs-check)
 ```
 
 ```bash
@@ -44,9 +44,9 @@ The whole design rests on one split:
 
 `docs/<slug>/manifest.json` is the contract between the two, and the reproducibility guarantee: re-running it after a UI change regenerates every screenshot. Never bypass `capture.js` with ad-hoc browser screenshots.
 
-**Three hard gates**, none skippable or auto-approvable: (1) manifest before capture, (2) draft before anything leaves local, (3) exact summary of external writes before publish. They're stated in `commands/write-docs.md`, SKILL.md, and `references/publish-targets.md` — keep those consistent. `/write-docs` and `/update-docs` also open with a **preflight worktree confirmation** (base branch + worktree name → `.worktrees/<branch>`), stated in SKILL.md §0.2 and echoed in both command files — separate from the three gates, and skippable, unlike them. Consequence: cwd is the docs repo, not the plugin root, so every command invokes its script as `<plugin-root>/scripts/…`. `capture.js`, `update-check.js`, and `build-site.js` all resolve manifests and `outputDir` against cwd; the cheat-sheet above assumes the dogfood case where the two directories coincide.
+**Three hard gates**, none skippable or auto-approvable: (1) manifest before capture, (2) draft before anything leaves local, (3) exact summary of external writes before publish. They're stated in `commands/write-docs.md`, SKILL.md, and `references/publish-targets.md` — keep those consistent. `/shopify-apps-doc-writer:write-docs` and `/shopify-apps-doc-writer:update-docs` also open with a **preflight worktree confirmation** (base branch + worktree name → `.worktrees/<branch>`), stated in SKILL.md §0.2 and echoed in both command files — separate from the three gates, and skippable, unlike them. Consequence: cwd is the docs repo, not the plugin root, so every command invokes its script as `<plugin-root>/scripts/…`. `capture.js`, `update-check.js`, and `build-site.js` all resolve manifests and `outputDir` against cwd; the cheat-sheet above assumes the dogfood case where the two directories coincide.
 
-`/docs-deploy` has its own confirmation gate, modeled on gate 3 but separate from these three: it publishes a *projection* of `docs/` to a Cloudflare Pages URL and never touches `meta.json`.
+`/shopify-apps-doc-writer:docs-deploy` has its own confirmation gate, modeled on gate 3 but separate from these three: it publishes a *projection* of `docs/` to a Cloudflare Pages URL and never touches `meta.json`.
 
 **Output contract** — always produced regardless of publish target; publishing is a projection of it:
 
@@ -56,7 +56,7 @@ docs/<feature-slug>/{index.md, manifest.json, meta.json, screenshots/NN-*.png}
 
 ### Coupling to watch when editing
 
-- **Exit codes are a documented contract.** `capture.js` exits `10` (auth expired → `/docs-setup auth`), `20` (selector timeout → UI changed, fix manifest) and `30` (bot challenge → re-run `--headed`; the manifest is fine). SKILL.md documents all three by number; `commands/docs-setup.md` references code 10 (and `setup-auth.js` also exits 10 on a failed login), so keep them in sync. Code 30 exists because every selector times out on an interstitial too, and reporting that as 20 sends the user to rewrite a correct manifest — `detectBotChallenge` in `lib/shopify.js` splits the two, classified once in `capture.js`'s `SELECTOR_TIMEOUT` handler so it covers every throw site (action resolve, waitFor, iframe crop, annotation resolve/out-of-region/never-settling).
+- **Exit codes are a documented contract.** `capture.js` exits `10` (auth expired → `/shopify-apps-doc-writer:docs-setup auth`), `20` (selector timeout → UI changed, fix manifest) and `30` (bot challenge → re-run `--headed`; the manifest is fine). SKILL.md documents all three by number; `commands/docs-setup.md` references code 10 (and `setup-auth.js` also exits 10 on a failed login), so keep them in sync. Code 30 exists because every selector times out on an interstitial too, and reporting that as 20 sends the user to rewrite a correct manifest — `detectBotChallenge` in `lib/shopify.js` splits the two, classified once in `capture.js`'s `SELECTOR_TIMEOUT` handler so it covers every throw site (action resolve, waitFor, iframe crop, annotation resolve/out-of-region/never-settling).
 - **Releases require a version bump.** Claude Code resolves this plugin's version from `version` in `.claude-plugin/plugin.json` and uses it as the update cache key, so merging to `main` ships *nothing* to installed users until that string changes. Any user-visible change (commands, skills, scripts, hooks) means bumping `.claude-plugin/plugin.json` **and** `package.json` to the same semver, plus a `CHANGELOG.md` entry. Deliberately not duplicated into `marketplace.json` — `plugin.json` wins the resolution order, and a second copy is a second thing to forget. Tags/releases are documentation, not a channel: users track `main`'s tip.
 - **Read-only guarantee** is enforced twice: `DESTRUCTIVE_PATTERN` in `capture.js` refuses destructive-looking action selectors, and SKILL.md forbids Claude from ever setting `"mutation": true` to override it. Both halves must stay.
 - **Selector policy** (`references/manifest-schema.md`): `data-testid` > aria-label/role > visible text. Never hashed Polaris class names. `waitFor` is required on every shot — `capture.js` validates this because Polaris skeleton loaders photobomb otherwise.

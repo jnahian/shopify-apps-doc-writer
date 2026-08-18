@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * update-check.js — deterministic drift detector for /update-docs.
+ * update-check.js — deterministic drift detector for /shopify-apps-doc-writer:update-docs.
  *
  * Re-shoots the manifest into a temp dir (by shelling out to capture.js, which
  * stays the only screenshotter), then compares fresh vs committed screenshots
@@ -49,7 +49,7 @@ function realCapture({ manifestPath, appKey, outDir }) {
     { stdio: ['ignore', 2, 2] }
   );
   if (res.status === EXIT_AUTH) {
-    const e = /** @type {ExitError} */ (new Error('Session expired — run /docs-setup auth, then re-run.'));
+    const e = /** @type {ExitError} */ (new Error('Session expired — run /shopify-apps-doc-writer:docs-setup auth, then re-run.'));
     e.exitCode = EXIT_AUTH;
     throw e;
   }
@@ -207,7 +207,7 @@ function formatSweep(report) {
   const lines = [`Checked ${report.checked} doc(s)`];
   for (const d of report.docs) {
     if (d.error) {
-      const hint = d.error === 'selector-timeout' ? ' — manifest needs updating (/write-docs)' : '';
+      const hint = d.error === 'selector-timeout' ? ' — manifest needs updating (/shopify-apps-doc-writer:write-docs)' : '';
       lines.push(`  ${d.slug}   ERROR: ${d.error}${hint}`);
       continue;
     }

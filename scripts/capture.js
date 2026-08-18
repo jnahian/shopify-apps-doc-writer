@@ -14,7 +14,7 @@
  *
  * Exit codes:
  *   0  success
- *   10 auth expired — run /docs-setup auth
+ *   10 auth expired — run /shopify-apps-doc-writer:docs-setup auth
  *   20 selector timeout — UI likely changed; the manifest needs updating
  *   30 bot challenge — the browser was interstitialed; re-run with --headed
  *   1  anything else (including read-only-guarantee refusal)
@@ -383,7 +383,7 @@ async function captureShot(page, config, shot, outDir) {
  * `waitFor` returns once the page is navigable, but third-party widgets and
  * transition indicators keep repainting for a few seconds after that — enough
  * to make every re-capture of an unchanged UI differ, which would make
- * /update-docs report drift that isn't there. Polling until the bytes stop
+ * /shopify-apps-doc-writer:update-docs report drift that isn't there. Polling until the bytes stop
  * moving makes re-capture reproducible without hardcoding per-app selectors
  * or a blanket sleep on every shot.
  * @param {Page} page
@@ -463,7 +463,7 @@ async function main() {
   const config = loadConfig(appKey);
 
   if (!fs.existsSync(config.storageState)) {
-    console.error(`No auth state at ${config.storageState}. Run /docs-setup auth.`);
+    console.error(`No auth state at ${config.storageState}. Run /shopify-apps-doc-writer:docs-setup auth.`);
     process.exit(EXIT_AUTH);
   }
 
@@ -503,7 +503,7 @@ async function main() {
   // storageState is engine-portable JSON and Shopify accepts a Chrome-minted
   // session in firefox/webkit too (validated live 2026-07-27). Caveat: settle()
   // only converges reliably on chrome — firefox/webkit re-encode enough of the
-  // frame between runs to trip /docs-check drift. See SPEC.md § Dependencies.
+  // frame between runs to trip /shopify-apps-doc-writer:docs-check drift. See SPEC.md § Dependencies.
   const engine = playwright[spec.engine];
   /** @type {{headless: boolean, channel?: string}} */
   const launchOpts = {
@@ -580,7 +580,7 @@ async function main() {
   } catch (err) {
     console.log('failed');
     if (err.code === 'AUTH_EXPIRED') {
-      console.error('Session expired — run /docs-setup auth, then re-run this capture.');
+      console.error('Session expired — run /shopify-apps-doc-writer:docs-setup auth, then re-run this capture.');
       await browser.close();
       process.exit(EXIT_AUTH);
     }

@@ -7,7 +7,7 @@ Invoke the `shopify-apps-doc-writer` skill and follow it end to end for the feat
 
 Rules of engagement (the skill has the full detail — these are the non-negotiables):
 
-1. **Preflight first.** Load per-user config from `~/.config/shopify-apps-doc-writer/`. If no config exists, stop and point the user to `/docs-setup`. If `--app <key>` was passed, use that config; if exactly one config exists, use it; otherwise ask which app.
+1. **Preflight first.** Load per-user config from `~/.config/shopify-apps-doc-writer/`. If no config exists, stop and point the user to `/shopify-apps-doc-writer:docs-setup`. If `--app <key>` was passed, use that config; if exactly one config exists, use it; otherwise ask which app.
 2. **Isolate before writing.** Confirm a git worktree with the user first — base branch and branch/worktree name (default `docs/<feature-slug>`) — and do all work there. Already in a worktree, or not a git repo, or the user declines: work in place and say so. This is a preflight confirmation, separate from the three gates below.
 3. **Three hard gates, none skippable, none auto-approvable:**
    - Gate 1: user approves the shot manifest before any capture runs.

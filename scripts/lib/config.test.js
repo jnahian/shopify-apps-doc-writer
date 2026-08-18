@@ -45,7 +45,7 @@ assert.deepStrictEqual(parseArgs([]), {}, 'empty argv');
 // resolveAppKey: explicit wins even with no configs on disk.
 assert.strictEqual(resolveAppKey('given'), 'given', 'explicit key wins');
 
-// Zero configs → guidance to run /docs-setup.
+// Zero configs → guidance to run /shopify-apps-doc-writer:docs-setup.
 assert.throws(() => resolveAppKey(), /No config found .*docs-setup/, 'no configs → setup guidance');
 
 // One config → it is the default. *.auth.json must not count as a config.

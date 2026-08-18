@@ -6,7 +6,7 @@
  *
  * Renders every doc dir (meta.json + index.md) to plain HTML with real inline
  * screenshots, plus a root index listing every doc with a DRAFT badge. The
- * output dir is handed to `npx wrangler pages deploy` by /docs-deploy and then
+ * output dir is handed to `npx wrangler pages deploy` by /shopify-apps-doc-writer:docs-deploy and then
  * discarded — nothing site-related is committed to any repo.
  *
  * Emits a human report to stderr and machine-readable JSON to stdout (same

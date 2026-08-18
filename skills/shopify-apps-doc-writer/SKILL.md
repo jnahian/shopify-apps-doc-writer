@@ -1,6 +1,6 @@
 ---
 name: shopify-apps-doc-writer
-description: Write merchant-facing feature documentation for a Shopify app with real screenshots. Use whenever the user wants to document a feature, write a help article, user guide, how-to, onboarding walkthrough, or knowledge-base entry for the app's merchants, or redo one whose screenshots went stale after a UI change or release — even if they never say "documentation," and even when they only name the audience ("for merchants, not developers") or ask for "real screenshots from the admin." Also the engine behind /write-docs and /update-docs. Not for developer- or marketing-facing writing: API/endpoint references, READMEs, contributor or setup docs, release notes, changelogs, or blog posts.
+description: Write merchant-facing feature documentation for a Shopify app with real screenshots. Use whenever the user wants to document a feature, write a help article, user guide, how-to, onboarding walkthrough, or knowledge-base entry for the app's merchants, or redo one whose screenshots went stale after a UI change or release — even if they never say "documentation," and even when they only name the audience ("for merchants, not developers") or ask for "real screenshots from the admin." Also the engine behind /shopify-apps-doc-writer:write-docs and /shopify-apps-doc-writer:update-docs. Not for developer- or marketing-facing writing: API/endpoint references, READMEs, contributor or setup docs, release notes, changelogs, or blog posts.
 ---
 
 # shopify-apps-doc-writer — Orchestrator
@@ -17,14 +17,14 @@ Produce a complete merchant-facing feature doc: prose + real, consistent screens
 
 ## 0. Preflight
 
-1. Resolve the app config: `~/.config/shopify-apps-doc-writer/<app-key>.json`. Honor `--app <key>`; with no flag, use the single config if exactly one exists, otherwise ask. **If no config exists, stop** and tell the user to run `/docs-setup` first.
+1. Resolve the app config: `~/.config/shopify-apps-doc-writer/<app-key>.json`. Honor `--app <key>`; with no flag, use the single config if exactly one exists, otherwise ask. **If no config exists, stop** and tell the user to run `/shopify-apps-doc-writer:docs-setup` first.
 2. **Workspace — isolate the work in a git worktree** (preflight confirmation; separate from the three gates). Derive `<feature-slug>` (kebab-case) first — the branch is named after it. Docs land in the *working directory's* repo, so keep the user's checkout untouched:
    - Not a git repo → work in place, say so once, move on.
    - Already isolated (`git rev-parse --git-dir` ≠ `--git-common-dir` **and** `git rev-parse --show-superproject-working-tree` prints nothing — a non-empty result means a submodule, not a worktree) → stay here, say which branch, move on.
    - `docs/` not tracked here (`git check-ignore -q docs`, or `git ls-files docs/` is empty) → a worktree buys nothing: the output would be untracked files in a throwaway directory. Say so and work in place. (This is the case in the plugin's own repo, where `docs/*` is gitignored.)
    - Otherwise **ask once**, with both defaults filled in: base branch (default the repo's default branch — `git symbolic-ref --short refs/remotes/origin/HEAD` minus the `origin/` prefix, so the worktree bases on the *local* branch, not a possibly stale remote ref; fall back to the current branch if that local branch doesn't exist) and branch/worktree name (default `docs/<feature-slug>`). The user may decline — then work in place.
    - On approval: verify the worktree dir is ignored (`git check-ignore -q .worktrees`; if not, append `.worktrees/` to `.gitignore` and commit that one line), then `git worktree add .worktrees/<branch> -b <branch> <base>`. **Every step below runs with that worktree as the working directory** — including `docs/<slug>/` paths.
-3. Read product context if present, per app: `.agents/<app-key>.product-marketing.md` in the repo, else `~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`. (A legacy un-keyed `.agents/product-marketing.md` from a single-app setup is an acceptable fallback — offer to rename it to the app-keyed name.) If missing, warn once ("docs will lack shared positioning/tone grounding — `/docs-setup context` fixes this") and proceed.
+3. Read product context if present, per app: `.agents/<app-key>.product-marketing.md` in the repo, else `~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`. (A legacy un-keyed `.agents/product-marketing.md` from a single-app setup is an acceptable fallback — offer to rename it to the app-keyed name.) If missing, warn once ("docs will lack shared positioning/tone grounding — `/shopify-apps-doc-writer:docs-setup context` fixes this") and proceed.
 4. If ambiguous, ask (one round, concrete options): **audience** (merchant-facing vs internal) and **doc type** (new doc vs rewrite of an existing one). Default: merchant-facing, new.
 5. If `docs/<slug>/` already exists and this isn't a rewrite, ask before overwriting.
 
@@ -47,7 +47,7 @@ Write `docs/<slug>/manifest.json` per `references/manifest-schema.md`. Rules tha
 - `waitFor` is required on every shot (Polaris skeleton loaders photobomb otherwise). Default strategy: network idle **and** selector visible.
 - Actions are read-only navigation **only** — `click`/`fill`/`select`/`hover`/`press` to reach a UI state, never to mutate store data. Never set `"mutation": true` on any shot; if a state can only be reached by mutating data, screenshot the state before it and note the limitation to the user.
 - Annotations (`annotate`) are optional and sparing — a highlight or arrow only where the merchant's eye genuinely needs directing, and a `blur` over anything merchant-identifying (store name, email, revenue numbers). Targets follow the same selector policy; they're measured, never clicked, so a destructive-looking target (e.g. pointing an arrow at a "Save" button) is fine and won't trip the read-only check.
-- **Always** set the manifest's `browser` field to the engine you captured with (`chrome` unless told otherwise). `/docs-check` re-shoots through this manifest without `--browser`, so an omitted field lets a teammate's config pick a different engine and report drift on a UI that never changed.
+- **Always** set the manifest's `browser` field to the engine you captured with (`chrome` unless told otherwise). `/shopify-apps-doc-writer:docs-check` re-shoots through this manifest without `--browser`, so an omitted field lets a teammate's config pick a different engine and report drift on a UI that never changed.
 
 **Gate 1:** present the manifest for approval — shot count, pages touched, every action listed, and an explicit statement that all actions are read-only. Iterate until the user approves. Do not run capture before approval.
 
@@ -62,7 +62,7 @@ node <plugin-root>/scripts/capture.js --manifest docs/<slug>/manifest.json --app
 `<plugin-root>` is this skill's directory two levels up — the one holding `.claude-plugin/`.
 
 - Exit `0`: show the captured screenshots inline for a quick visual sanity check (skeletons? wrong page? personal data visible?). Re-shoot individual shots with `--only <shot-id>` after fixing the manifest.
-- Exit `10` (auth expired): tell the user to run `/docs-setup auth`, then retry.
+- Exit `10` (auth expired): tell the user to run `/shopify-apps-doc-writer:docs-setup auth`, then retry.
 - Exit `20` (selector timeout): the script reports which shot/selector — the UI likely changed; fix the manifest, re-approve the changed shots (gate 1 applies to changes), re-run.
 - Exit `30` (bot challenge): the browser landed on a "verify your connection" interstitial, not the admin. The manifest is fine — do not change it. Re-run the same command with `--headed`.
 - If the browser is missing: `chromium`/`firefox`/`webkit` auto-install on first use (one-time download — the script handles it); for `chrome`/`msedge` the script prints a vendor-install link — relay it.
