@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * setup-auth.js — Phase 1 of /docs-setup.
+ * setup-auth.js — Phase 1 of /shopify-apps-doc-writer:docs-setup.
  *
  * Spawns a real Chrome at the store's admin with a CDP port and attaches to
  * it (Playwright-launched browsers are rejected by Shopify's login), waits
@@ -232,7 +232,7 @@ async function main() {
   if (!isAdminUrl(finalUrl)) {
     console.error(
       `Verification landed on ${finalUrl} — the saved session did not authenticate headlessly.\n` +
-        'Re-run this script (/docs-setup auth).'
+        'Re-run this script (/shopify-apps-doc-writer:docs-setup auth).'
     );
     process.exit(10);
   }

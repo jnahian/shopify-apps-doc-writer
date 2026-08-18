@@ -4,12 +4,12 @@ argument-hint: "[off|status] [--app <key>] [--at HH:MM]"
 ---
 
 Manage the scheduled staleness sweep. The sweep is the same deterministic
-check `/docs-check` runs (`update-check.js --all`), executed daily by launchd
+check `/shopify-apps-doc-writer:docs-check` runs (`update-check.js --all`), executed daily by launchd
 with no Claude session; it only **reports** — results land in
 `~/.config/shopify-apps-doc-writer/<app-key>.sweep.json` and show up as a
 one-line notice when you next start a session. Nothing is ever published or
-sent to Slack unattended; you act on a notice by running `/update-docs
-<slug>` or `/docs-check` yourself.
+sent to Slack unattended; you act on a notice by running `/shopify-apps-doc-writer:update-docs
+<slug>` or `/shopify-apps-doc-writer:docs-check` yourself.
 
 Argument given: **$ARGUMENTS** — empty means install (or replace); `off` means uninstall; `status` means inspect the schedule. `--app` and `--at` pass through to the script.
 
@@ -45,8 +45,8 @@ message — tell the user Linux cron support is deferred.
    If the script exits nonzero (invalid `--at` format, unsafe app key, no docs in the current directory, or `launchctl bootstrap` failure): show its stderr verbatim and stop — do not retry or edit files by hand.
 
    On success: run `--status` and show the user the output. Mention that
-   re-running `/docs-schedule` any time replaces the schedule (one per app),
-   and `/docs-schedule off` removes it.
+   re-running `/shopify-apps-doc-writer:docs-schedule` any time replaces the schedule (one per app),
+   and `/shopify-apps-doc-writer:docs-schedule off` removes it.
 
 ## `off` → uninstall
 
@@ -65,10 +65,10 @@ node <plugin-root>/scripts/schedule-sweep.js --status --app <key>
 
 Show the output as-is: whether the job is installed and loaded, the last
 sweep result, and the log path. Route based on the last sweep status:
-- `auth-expired` → tell the user to run `/docs-setup auth` — the next scheduled sweep recovers on its own.
-- `drift` → route to `/update-docs <slug>` / `/docs-check` (for the full report + Slack draft)
-- `bot-challenge` → tell the user to run `/docs-check` themselves (headed capture); do not suggest touching the manifest
-- `error` → show the reason and the log path from the status output. A sweep that checked zero docs reports `error` too: the schedule is pointing at the wrong directory, so re-run `/docs-schedule` from the docs repo.
+- `auth-expired` → tell the user to run `/shopify-apps-doc-writer:docs-setup auth` — the next scheduled sweep recovers on its own.
+- `drift` → route to `/shopify-apps-doc-writer:update-docs <slug>` / `/shopify-apps-doc-writer:docs-check` (for the full report + Slack draft)
+- `bot-challenge` → tell the user to run `/shopify-apps-doc-writer:docs-check` themselves (headed capture); do not suggest touching the manifest
+- `error` → show the reason and the log path from the status output. A sweep that checked zero docs reports `error` too: the schedule is pointing at the wrong directory, so re-run `/shopify-apps-doc-writer:docs-schedule` from the docs repo.
 - `ok` or `never ran` → nothing to do
 
 ## Notes

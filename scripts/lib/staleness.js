@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * staleness.js — pure drift-detection logic for /update-docs.
+ * staleness.js — pure drift-detection logic for /shopify-apps-doc-writer:update-docs.
  *
  * Compares the current local doc state against the state recorded at last
  * publish. Byte-level sensitivity: a screenshot that differs by one byte

@@ -19,7 +19,7 @@ The shot manifest is the contract between adaptive discovery and deterministic c
 | `app` | yes | App key — must match a config file (`~/.config/shopify-apps-doc-writer/<app>.json`) |
 | `feature` | yes | Feature slug — must match the containing `docs/<slug>/` directory |
 | `viewport` | no | Overrides the config viewport for this manifest (default 1440×900) |
-| `browser` | no, but always write it | Pins the rendering engine so re-capture on any machine reproduces the doc's original look: `chrome` (default) \| `msedge` \| `chromium` \| `firefox` \| `webkit`. Precedence: `--browser` CLI flag > manifest > config `capture.browser` > `chrome`. Omitting it lets a re-shooter's own `capture.browser` win, which re-encodes every screenshot and shows up as false drift in `/docs-check`. |
+| `browser` | no, but always write it | Pins the rendering engine so re-capture on any machine reproduces the doc's original look: `chrome` (default) \| `msedge` \| `chromium` \| `firefox` \| `webkit`. Precedence: `--browser` CLI flag > manifest > config `capture.browser` > `chrome`. Omitting it lets a re-shooter's own `capture.browser` win, which re-encodes every screenshot and shows up as false drift in `/shopify-apps-doc-writer:docs-check`. |
 | `shots` | yes | Ordered array of shot objects |
 
 ## Shot object
@@ -48,7 +48,7 @@ The shot manifest is the contract between adaptive discovery and deterministic c
 | `waitStrategy` | no | `"networkidle+selector"` (default) or `"selector"` (skip the network-idle wait — for pages with long-polling/websockets that never go idle) |
 | `crop` | no | `"full-admin"` (default; full viewport — context/navigation shots showing where the feature lives) or `"iframe"` (crops to the app iframe bounding box — feature detail) |
 | `caption` | yes | Used as the image alt/caption in the doc |
-| `driftCheck` | no | Set `false` to exclude this shot from `/update-docs` drift comparison. The shot is still re-shot, but reported as "not compared (volatile)" instead of changed. Use it for shots whose pixels nobody controls — host-app chrome, third-party widgets that render intermittently — which otherwise report drift on an unchanged feature. Prefer `crop: "iframe"` first; reach for this when a `full-admin` context shot proves unstable |
+| `driftCheck` | no | Set `false` to exclude this shot from `/shopify-apps-doc-writer:update-docs` drift comparison. The shot is still re-shot, but reported as "not compared (volatile)" instead of changed. Use it for shots whose pixels nobody controls — host-app chrome, third-party widgets that render intermittently — which otherwise report drift on an unchanged feature. Prefer `crop: "iframe"` first; reach for this when a `full-admin` context shot proves unstable |
 | `annotate` | no | Ordered list of annotations drawn onto this shot at capture time — see [Annotations](#annotations). Default `[]` |
 | `mutation` | no | **Forbidden in v1.** `capture.js` refuses destructive-looking actions unless this is `true`, and the orchestrator must never set it |
 
@@ -67,7 +67,7 @@ Selectors in actions and `waitFor` are resolved first against the admin page, th
 
 ## Annotations
 
-Optional per-shot `annotate` array. Each annotation anchors to a **selector** (same policy and frame transparency as `waitFor` and actions) and is drawn as a browser overlay just before the screenshot — the annotated PNG is the artifact. Determinism holds: an unchanged UI with an unchanged `annotate` list re-captures byte-identical, so `/docs-check` reports no phantom drift. Every target is re-measured after the page settles, and capture fails with exit `20` rather than shipping a misplaced or missing box if a target moves, disappears, or lands outside the **capture region** — the viewport for `crop: "full-admin"`, the app iframe's rect for `crop: "iframe"`. Highlights and blurs need only overlap that region (the element's size isn't yours to choose); an arrow must fit inside it entirely, since `side`/`length`/`offset` are, and a clipped arrow points from nowhere. Entries are drawn in order, back-to-front.
+Optional per-shot `annotate` array. Each annotation anchors to a **selector** (same policy and frame transparency as `waitFor` and actions) and is drawn as a browser overlay just before the screenshot — the annotated PNG is the artifact. Determinism holds: an unchanged UI with an unchanged `annotate` list re-captures byte-identical, so `/shopify-apps-doc-writer:docs-check` reports no phantom drift. Every target is re-measured after the page settles, and capture fails with exit `20` rather than shipping a misplaced or missing box if a target moves, disappears, or lands outside the **capture region** — the viewport for `crop: "full-admin"`, the app iframe's rect for `crop: "iframe"`. Highlights and blurs need only overlap that region (the element's size isn't yours to choose); an arrow must fit inside it entirely, since `side`/`length`/`offset` are, and a clipped arrow points from nowhere. Entries are drawn in order, back-to-front.
 
 ```json
 "annotate": [

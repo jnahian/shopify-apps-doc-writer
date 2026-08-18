@@ -32,9 +32,9 @@ function formatNotice({ appKey, record, logPath }, now) {
   }
   switch (record.status) {
     case 'auth-expired':
-      return `[${appKey}] scheduled sweeps are blocked — auth expired; run /docs-setup auth.`;
+      return `[${appKey}] scheduled sweeps are blocked — auth expired; run /shopify-apps-doc-writer:docs-setup auth.`;
     case 'bot-challenge':
-      return `[${appKey}] last scheduled sweep (${when}) was bot-challenged; run /docs-check yourself (headed capture) to get a real result.`;
+      return `[${appKey}] last scheduled sweep (${when}) was bot-challenged; run /shopify-apps-doc-writer:docs-check yourself (headed capture) to get a real result.`;
     case 'error': {
       // Carry the recorded reason: the shim's stale-pointer record explains
       // exactly how to recover, and burying that in a log file nobody opens
@@ -48,7 +48,7 @@ function formatNotice({ appKey, record, logPath }, now) {
       const parts = [];
       if (stale.length) {
         parts.push(
-          `found ${stale.length} stale doc(s): ${stale.join(', ')} — run /update-docs <slug>, or /docs-check for the full report + Slack draft`
+          `found ${stale.length} stale doc(s): ${stale.join(', ')} — run /shopify-apps-doc-writer:update-docs <slug>, or /shopify-apps-doc-writer:docs-check for the full report + Slack draft`
         );
       }
       if (errs.length) parts.push(`capture errors: ${errs.join(', ')}`);

@@ -111,7 +111,7 @@ if (process.platform === 'darwin') {
     env: { ...process.env, HOME: noConfig, USERPROFILE: noConfig },
   });
   assert.strictEqual(cli.status, 1);
-  assert.match(cli.stderr, /Run \/docs-setup first/);
+  assert.match(cli.stderr, /Run \/shopify-apps-doc-writer:docs-setup first/);
   assert.ok(!/\n\s+at /.test(cli.stderr), `no stack trace: ${cli.stderr}`);
 }
 

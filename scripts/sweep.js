@@ -4,7 +4,7 @@
 /**
  * sweep.js — unattended staleness-sweep runner for scheduled (launchd) runs.
  *
- * Spawns update-check.js --all (the same sweep /docs-check uses), classifies
+ * Spawns update-check.js --all (the same sweep /shopify-apps-doc-writer:docs-check uses), classifies
  * the outcome, and overwrites ~/.config/shopify-apps-doc-writer/
  * <app-key>.sweep.json for the SessionStart hook to surface next session.
  * Latest state is the only state: a clean sweep clears a previous drifty one.
@@ -89,7 +89,7 @@ function classifyOutcome({ exitCode, stdout, errorText }) {
       status: 'error',
       message:
         'update-check found no docs to check — the schedule is pointing at a directory with no docs. ' +
-        'Re-run /docs-schedule from your docs repo.',
+        'Re-run /shopify-apps-doc-writer:docs-schedule from your docs repo.',
       summary,
       raw: report,
     };

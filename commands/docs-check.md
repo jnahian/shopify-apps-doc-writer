@@ -16,7 +16,7 @@ node <plugin-root>/scripts/update-check.js --all --app <key>
 
 Parse the JSON on stdout: `{ docs, skipped, checked, anyDrift }`.
 
-- Exit `10`: auth expired — run `/docs-setup auth`, then re-run.
+- Exit `10`: auth expired — run `/shopify-apps-doc-writer:docs-setup auth`, then re-run.
 - Exit `30`: the browser was bot-challenged, so the sweep aborted (every doc would fail the same way). Re-run the capture headed rather than touching any manifest.
 - Exit `1`: show the error verbatim and stop.
 
@@ -43,17 +43,17 @@ Also report:
 
 ## 3. Route the fixes (do not perform them)
 
-- Stale **published** doc → tell the user to run `/update-docs <slug>`
+- Stale **published** doc → tell the user to run `/shopify-apps-doc-writer:update-docs <slug>`
   (gated screenshot promotion + re-publish).
 - Stale **draft** (`published: false`) → refresh the local screenshots:
   `node <plugin-root>/scripts/capture.js --manifest docs/<slug>/manifest.json --app <key>`
   — no publish involved, so no gate.
 - `selector-timeout` → the manifest needs updating and re-approval via
-  `/write-docs`.
+  `/shopify-apps-doc-writer:write-docs`.
 
 ## Notes
 
 - All captures go through `capture.js` (read-only guarantee). The sweep
   deletes its own temp dirs; there is nothing to clean up.
-- A future release workflow (`app-release`) can run `/docs-check` as its
+- A future release workflow (`app-release`) can run `/shopify-apps-doc-writer:docs-check` as its
   first step — this command is deliberately self-contained.

@@ -23,13 +23,13 @@ Config lives at `~/.config/shopify-apps-doc-writer/<app-key>.json` (per-user, ne
 4. Show the verification screenshot to the user and ask them to confirm it shows their app inside the admin. This catches wrong store / app not installed / broken session at setup time, not mid-capture.
 5. If the script exits with code 10 or the verification shot shows a login page, the session didn't stick — rerun the script.
 
-Note for later: whenever `scripts/capture.js` exits with code **10** (auth expired), the fix is rerunning this phase: `/docs-setup auth`.
+Note for later: whenever `scripts/capture.js` exits with code **10** (auth expired), the fix is rerunning this phase: `/shopify-apps-doc-writer:docs-setup auth`.
 
 ## Phase 2 — Publish target discovery
 
 1. Enumerate the MCP tools connected in this session. Filter to plausible **document destinations** (Google Docs/Drive, Notion, Confluence, ClickUp Docs, and the like). Ignore everything else.
 2. Present the filtered list: "I found these possible destinations: … Pick one, or stay local-only." **Never auto-select** — the user chooses.
-3. If they choose Google Docs/Drive → set `publish.target: "google-docs"`. If they choose another connector → set `publish.target: "mcp"` and record `publish.mcp.hint` (e.g. `"notion"`). If they choose local-only or nothing relevant is connected → set `publish.target: "local"` and tell them they can rerun `/docs-setup publish` after connecting a destination.
+3. If they choose Google Docs/Drive → set `publish.target: "google-docs"`. If they choose another connector → set `publish.target: "mcp"` and record `publish.mcp.hint` (e.g. `"notion"`). If they choose local-only or nothing relevant is connected → set `publish.target: "local"` and tell them they can rerun `/shopify-apps-doc-writer:docs-setup publish` after connecting a destination.
 4. For external targets, run a **lightweight capability probe** using the tool schemas (do not create anything yet): can it create a document? Can it accept/embed images? Record `publish.supportsImages` accordingly. If image support can't be determined from schemas, record `false` and note that runtime fallback (placeholder markers) will apply.
 5. Ask where docs should go — Drive folder ID, Notion parent page, space key, etc. — and record it as `publish.parentFolderId`.
 
@@ -42,7 +42,7 @@ Note for later: whenever `scripts/capture.js` exits with code **10** (auth expir
    - Personal (`~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`) — if they'd rather not commit it.
 
    The vendored `product-marketing` skill file drafts to the un-keyed `.agents/product-marketing.md`; rename its output to the app-keyed path above when you save.
-4. This phase is skippable. If skipped, `/write-docs` will warn that product context is missing but proceed anyway.
+4. This phase is skippable. If skipped, `/shopify-apps-doc-writer:write-docs` will warn that product context is missing but proceed anyway.
 
 ## Wrap-up
 
