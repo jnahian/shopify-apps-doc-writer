@@ -5,7 +5,7 @@
 
 const assert = require('assert');
 const path = require('path');
-const { resolveOutDir, resolveBrowser } = require('./capture');
+const { resolveOutDir, resolveBrowser, checkReadOnly, validateManifest } = require('./capture');
 
 // Default: screenshots dir adjacent to the manifest.
 assert.strictEqual(
@@ -56,3 +56,44 @@ assert.throws(
 );
 
 console.log('ok — resolveBrowser precedence and validation');
+
+// A manifest with valid annotations passes validation (returns; any failure
+// would process.exit(1) and fail this suite).
+validateManifest(
+  {
+    app: 'x',
+    feature: 'f',
+    shots: [
+      {
+        id: '01-a',
+        path: '/admin/apps/x',
+        waitFor: '#ready',
+        annotate: [
+          { type: 'highlight', target: "[data-testid='sov-score']" },
+          { type: 'arrow', target: "[data-testid='add-keyword']", side: 'bottom' },
+          { type: 'blur', target: "[data-testid='store-email']", fill: '#1a1a1a' },
+        ],
+      },
+    ],
+  },
+  'test-manifest.json'
+);
+
+console.log('ok — validateManifest accepts a valid annotate array');
+
+// Annotate targets are measured, never clicked — a destructive-looking
+// selector in an annotation must not trip the read-only guarantee.
+checkReadOnly({
+  app: 'x',
+  feature: 'f',
+  shots: [
+    {
+      id: '01-a',
+      path: '/admin/apps/x',
+      waitFor: '#ready',
+      annotate: [{ type: 'highlight', target: "[data-testid='save-button']" }],
+    },
+  ],
+});
+
+console.log('ok — checkReadOnly ignores annotate targets');
