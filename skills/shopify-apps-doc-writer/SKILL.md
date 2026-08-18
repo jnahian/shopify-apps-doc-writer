@@ -92,7 +92,7 @@ Present `index.md` (and the screenshot set) for review. Iterate until approved. 
 
 Only if config `publish.target` is not `local` and the user wants to publish. Follow `references/publish-targets.md` for the target-specific procedure.
 
-**Gate 3:** before any external write, show exactly what will be created where — e.g. "1 Google Doc + 8 images into Drive folder X" — and require an explicit yes. Non-skippable. If the target can't ingest images, say so at the gate: text will publish with `[Screenshot: …]` placeholder markers (degraded, never broken).
+**Gate 3:** before any external write, show exactly what will be created where — e.g. "1 Google Doc + 8 images into Drive folder X" — and require an explicit yes. Non-skippable. If the target can't ingest images, say so at the gate: text will publish with `[Screenshot: …]` placeholder markers (degraded, never broken). On a **re-publish**, the summary must also state the clobber-check result — manual edits found in the live doc (shown verbatim; publishing reverts them), none found, or the check was unavailable and why (`/shopify-apps-doc-writer:update-docs` step 4; snapshot per `references/publish-targets.md`).
 
 ## 7. Wrap-up
 
