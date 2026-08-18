@@ -8,6 +8,20 @@ Notable changes to the `shopify-apps-doc-writer` plugin. Format follows
 `.claude-plugin/plugin.json` is bumped** — Claude Code uses that string as its
 update cache key, so merging to `main` alone ships nothing.
 
+## [0.4.1] - 2026-08-18
+
+### Fixed
+
+- Every command reference the plugin prints now uses its real, namespaced form
+  (`/shopify-apps-doc-writer:docs-setup`, not `/docs-setup`). Claude Code
+  namespaces plugin commands by the plugin's `name`, so the bare forms the
+  scripts, hooks, and SKILL.md used to emit were not invocable — a user
+  following an exit-10 message typed `/docs-setup auth` and got nothing. This
+  affected the documented exit-code remedies (10 → auth, 30 → headed re-run),
+  the scheduled-sweep session notice, and the missing-config guidance. README,
+  SPEC, and CLAUDE.md are updated to match. Capture, scheduling, and publishing
+  are untouched — what changed is the text you are told to type.
+
 ## [0.4.0] - 2026-08-18
 
 ### Added
