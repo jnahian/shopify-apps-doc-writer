@@ -31,8 +31,21 @@ update cache key, so merging to `main` alone ships nothing.
   `/docs-schedule` keeps firing and `/docs-schedule off` still finds it, and
   the saved Chrome profile stays put. Those paths are deliberately decoupled
   from the display name so a rename never costs you a re-login or leaves an
-  orphaned daily job. Your slash commands are unchanged; skill ids now read
-  `doc-writer:…`.
+  orphaned daily job. Skill ids now read `doc-writer:…`.
+- **Two commands renamed** so all six group under one prefix — type `/docs` and
+  the whole set comes up:
+
+  | Old | New |
+  |---|---|
+  | `/write-docs` | `/docs-write` |
+  | `/update-docs` | `/docs-update` |
+
+  `/docs-check`, `/docs-deploy`, `/docs-schedule`, and `/docs-setup` are
+  unchanged. The old names are gone rather than aliased; anything scripted
+  against them needs updating.
+
+  Entries above this one name the commands as they were at the time and have
+  been left alone.
 
 ## [0.4.0] - 2026-08-18
 

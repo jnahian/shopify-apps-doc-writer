@@ -42,7 +42,7 @@ Note for later: whenever `scripts/capture.js` exits with code **10** (auth expir
    - Personal (`~/.config/shopify-apps-doc-writer/<app-key>.product-marketing.md`) — if they'd rather not commit it.
 
    The vendored `product-marketing` skill file drafts to the un-keyed `.agents/product-marketing.md`; rename its output to the app-keyed path above when you save.
-4. This phase is skippable. If skipped, `/write-docs` will warn that product context is missing but proceed anyway.
+4. This phase is skippable. If skipped, `/docs-write` will warn that product context is missing but proceed anyway.
 
 ## Wrap-up
 

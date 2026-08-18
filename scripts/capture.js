@@ -383,7 +383,7 @@ async function captureShot(page, config, shot, outDir) {
  * `waitFor` returns once the page is navigable, but third-party widgets and
  * transition indicators keep repainting for a few seconds after that — enough
  * to make every re-capture of an unchanged UI differ, which would make
- * /update-docs report drift that isn't there. Polling until the bytes stop
+ * /docs-update report drift that isn't there. Polling until the bytes stop
  * moving makes re-capture reproducible without hardcoding per-app selectors
  * or a blanket sleep on every shot.
  * @param {Page} page

@@ -7,7 +7,7 @@ Refresh the published doc at `docs/$1/`. Follow these steps exactly; the gates a
 
 ## 0. Isolate the work
 
-This command overwrites screenshots and rewrites `meta.json`, so do it in a git worktree — same preflight confirmation as `/write-docs` (see §0.2 of the `shopify-apps-doc-writer` skill): ask once for the base branch (default the repo's default branch, local not `origin/…`) and the branch/worktree name (default `docs/$1-update`), then `git worktree add .worktrees/<branch> -b <branch> <base>` and run everything below from there. Already in a worktree, not a git repo, or the user declines → work in place and say so.
+This command overwrites screenshots and rewrites `meta.json`, so do it in a git worktree — same preflight confirmation as `/docs-write` (see §0.2 of the `shopify-apps-doc-writer` skill): ask once for the base branch (default the repo's default branch, local not `origin/…`) and the branch/worktree name (default `docs/$1-update`), then `git worktree add .worktrees/<branch> -b <branch> <base>` and run everything below from there. Already in a worktree, not a git repo, or the user declines → work in place and say so.
 
 **Only if `docs/$1/` is tracked** (`git ls-files --error-unmatch docs/$1` succeeds). A worktree contains tracked content only — if this doc isn't committed, a fresh worktree wouldn't have the manifest, screenshots, or `meta.json` to compare against. In that case say so and work in place.
 
@@ -21,7 +21,7 @@ node <plugin-root>/scripts/update-check.js --manifest docs/$1/manifest.json --ap
 
 Parse the JSON printed on stdout.
 
-- If `published` is `false`: tell the user this doc has never been published, so there is nothing to compare against — they should publish it first via `/write-docs`. Stop.
+- If `published` is `false`: tell the user this doc has never been published, so there is nothing to compare against — they should publish it first via `/docs-write`. Stop.
 - If `anyDrift` is `false`: tell the user the doc is up to date since its last publish — nothing to do. Delete `tmpDir` (`rm -rf <tmpDir>`). Stop.
 
 ## 2. Report the drift
@@ -64,7 +64,7 @@ Update `docs/$1/meta.json`:
 ## Notes
 
 - If `update-check.js` exits `10`, auth expired — run `/docs-setup auth` and retry.
-- If it exits `20`, a selector no longer resolves: the UI changed structurally and the **manifest** needs updating (re-approve it via `/write-docs`) before `/update-docs` can work.
+- If it exits `20`, a selector no longer resolves: the UI changed structurally and the **manifest** needs updating (re-approve it via `/docs-write`) before `/docs-update` can work.
 - If it exits `30`, the browser hit a bot challenge instead of the admin. Nothing is wrong with the manifest — re-run the capture with `--headed`.
 - This command never mutates the admin: all captures go through `capture.js`, which enforces the read-only guarantee.
 - A doc published before `publishedHash` was recorded (or recorded with a different hash method) will report copy drift on its first run even if the text never changed. That's expected — re-publishing records the pinned hash and the false positive disappears.

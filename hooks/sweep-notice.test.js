@@ -16,7 +16,7 @@ const notice = (record) => formatNotice({ appKey: 'storeseo', record, logPath: '
 // Fresh ok → silence.
 assert.strictEqual(notice({ at: '2026-08-13T03:00:00Z', status: 'ok', summary: { checked: 3, stale: [], errors: [], skipped: [] } }), null);
 
-// Drift → slugs listed, routed to /update-docs and /docs-check.
+// Drift → slugs listed, routed to /docs-update and /docs-check.
 const driftResult = notice({
   at: '2026-08-13T03:00:00Z',
   status: 'drift',
@@ -31,7 +31,7 @@ const driftResult = notice({
   },
 });
 assert.ok(driftResult && driftResult.includes('2 stale doc(s): ai-seo, img-opt'), `slugs listed: ${driftResult}`);
-assert.ok(driftResult && driftResult.includes('/update-docs') && driftResult.includes('/docs-check'), 'routes to both commands');
+assert.ok(driftResult && driftResult.includes('/docs-update') && driftResult.includes('/docs-check'), 'routes to both commands');
 assert.ok(driftResult && driftResult.includes('broken (selector-timeout)'), 'per-doc capture errors surfaced');
 assert.ok(driftResult && driftResult.includes('2026-08-13 03:00 UTC'), `displayed time is labeled UTC: ${driftResult}`);
 

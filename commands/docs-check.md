@@ -43,13 +43,13 @@ Also report:
 
 ## 3. Route the fixes (do not perform them)
 
-- Stale **published** doc → tell the user to run `/update-docs <slug>`
+- Stale **published** doc → tell the user to run `/docs-update <slug>`
   (gated screenshot promotion + re-publish).
 - Stale **draft** (`published: false`) → refresh the local screenshots:
   `node <plugin-root>/scripts/capture.js --manifest docs/<slug>/manifest.json --app <key>`
   — no publish involved, so no gate.
 - `selector-timeout` → the manifest needs updating and re-approval via
-  `/write-docs`.
+  `/docs-write`.
 
 ## Notes
 

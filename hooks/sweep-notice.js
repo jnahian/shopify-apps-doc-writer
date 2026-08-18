@@ -48,7 +48,7 @@ function formatNotice({ appKey, record, logPath }, now) {
       const parts = [];
       if (stale.length) {
         parts.push(
-          `found ${stale.length} stale doc(s): ${stale.join(', ')} — run /update-docs <slug>, or /docs-check for the full report + Slack draft`
+          `found ${stale.length} stale doc(s): ${stale.join(', ')} — run /docs-update <slug>, or /docs-check for the full report + Slack draft`
         );
       }
       if (errs.length) parts.push(`capture errors: ${errs.join(', ')}`);

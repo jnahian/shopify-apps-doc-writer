@@ -10,7 +10,7 @@ A Claude Code plugin that writes merchant-facing feature documentation for embed
 ## 1. Goals & Non-Goals
 
 ### Goals (v1)
-- One-command workflow (`/write-docs <feature>`) that produces a complete feature doc: prose + real, consistent screenshots.
+- One-command workflow (`/docs-write <feature>`) that produces a complete feature doc: prose + real, consistent screenshots.
 - Deterministic, reproducible screenshot capture via a **shot manifest** — re-running a manifest after a UI change regenerates every screenshot in a doc.
 - Canonical output is **always local markdown + assets**. Publishing is an optional projection of it.
 - Publish target is pluggable: local-only, Google Docs (hardcoded known-good path), or any connected MCP (generic adaptive path).
@@ -19,7 +19,7 @@ A Claude Code plugin that writes merchant-facing feature documentation for embed
 
 ### Non-Goals (v1)
 - Screenshot annotation (arrows, highlight boxes, blur/redaction) → **shipped in 0.4.0 (§13)**.
-- `/update-docs` re-publish *diffing* against a live external doc → **0.5 on the v2 roadmap (§13)**. (Staleness detection + re-shoot + in-place re-publish shipped.)
+- `/docs-update` re-publish *diffing* against a live external doc → **0.5 on the v2 roadmap (§13)**. (Staleness detection + re-shoot + in-place re-publish shipped.)
 - Automated publishing without human confirmation → never.
 - Managing/seeding dev store demo data → manual checklist item only; deferred, uncommitted (§13).
 
@@ -28,7 +28,7 @@ A Claude Code plugin that writes merchant-facing feature documentation for embed
 ## 2. Architecture Overview
 
 ```
- /docs-setup                      /write-docs <feature>
+ /docs-setup                      /docs-write <feature>
       │                                 │
       ▼                                 ▼
  ┌──────────────┐   config    ┌──────────────────────┐
@@ -67,8 +67,8 @@ shopify-apps-doc-writer/
 │   └── plugin.json                  # name, version, description, author
 ├── commands/
 │   ├── docs-setup.md                # setup wizard (3 phases, resumable)
-│   ├── write-docs.md                # main workflow entry point
-│   └── update-docs.md               # drift detection → re-shoot → re-publish
+│   ├── docs-write.md                # main workflow entry point
+│   └── docs-update.md               # drift detection → re-shoot → re-publish
 ├── skills/
 │   ├── shopify-apps-doc-writer/
 │   │   ├── SKILL.md                 # orchestrator (see §7)
@@ -170,7 +170,7 @@ Phased and resumable. `/docs-setup` runs all phases; `/docs-setup auth|publish|c
 1. Offer to generate `product-marketing.md` (foundation doc that all vendored skills read first).
 2. Claude drafts it from: app landing page, Shopify App Store listing, plus a short interview. User reviews before save.
 3. Ask: save to repo (shared, default) or personal config dir.
-4. Skippable — the orchestrator warns (but proceeds) if it's missing at `/write-docs` time.
+4. Skippable — the orchestrator warns (but proceeds) if it's missing at `/docs-write` time.
 
 ---
 
@@ -224,7 +224,7 @@ The contract between discovery and capture. Lives at `docs/<feature-slug>/manife
 
 Frontmatter description must be "pushy" for reliable triggering, e.g.:
 
-> *Write merchant-facing feature documentation for a Shopify app with real screenshots. Use whenever the user wants to document a feature, write a help article, user guide, how-to, or knowledge-base entry for the app, update feature docs after a release, or mentions `/write-docs` — even if they don't say "documentation" explicitly.*
+> *Write merchant-facing feature documentation for a Shopify app with real screenshots. Use whenever the user wants to document a feature, write a help article, user guide, how-to, or knowledge-base entry for the app, update feature docs after a release, or mentions `/docs-write` — even if they don't say "documentation" explicitly.*
 
 Body must cover:
 
@@ -260,7 +260,7 @@ Target: SKILL.md body < 500 lines; push detail into `references/`.
 
 ## 8. Output Contract
 
-Every `/write-docs` run produces (canonical, regardless of publish target):
+Every `/docs-write` run produces (canonical, regardless of publish target):
 
 ```
 docs/<feature-slug>/
@@ -292,7 +292,7 @@ docs/<feature-slug>/
 }
 ```
 
-`contentHash` vs `publishedHash` is what `/update-docs` staleness detection uses ("copy changed since last publish — re-push?").
+`contentHash` vs `publishedHash` is what `/docs-update` staleness detection uses ("copy changed since last publish — re-push?").
 
 ---
 
@@ -336,7 +336,7 @@ job (macOS), `sweep.js` runs `update-check.js --all` and persists
 `<app-key>.sweep.json` for the SessionStart notice. Report-only.
 
 ### Dependencies
-- `playwright` (npm package only — no browser download for the default path). Login and verification drive the **system Google Chrome** (CDP for login, `channel:'chrome'` for verify); capture defaults to Chrome too, so `npx playwright install` is never needed out of the box. Non-default engines (`chromium`/`firefox`/`webkit` via config, manifest, or `--browser`) auto-install on first use. Validated live 2026-07-27: session portability **holds** — a Chrome-minted `storageState` is accepted by both firefox and webkit (no exit 10). But `settle()` **does not converge reliably** off Chrome: repeat captures of the same unchanged admin pages were byte-identical 2/2 on Chrome, 1/2 on firefox, 1/2 on webkit. So a doc captured on firefox/webkit will show phantom drift in `/docs-check` — **use `chrome` for anything `/update-docs` will re-check.** `npm install` auto-runs on first session via `hooks/ensure-deps.js`.
+- `playwright` (npm package only — no browser download for the default path). Login and verification drive the **system Google Chrome** (CDP for login, `channel:'chrome'` for verify); capture defaults to Chrome too, so `npx playwright install` is never needed out of the box. Non-default engines (`chromium`/`firefox`/`webkit` via config, manifest, or `--browser`) auto-install on first use. Validated live 2026-07-27: session portability **holds** — a Chrome-minted `storageState` is accepted by both firefox and webkit (no exit 10). But `settle()` **does not converge reliably** off Chrome: repeat captures of the same unchanged admin pages were byte-identical 2/2 on Chrome, 1/2 on firefox, 1/2 on webkit. So a doc captured on firefox/webkit will show phantom drift in `/docs-check` — **use `chrome` for anything `/docs-update` will re-check.** `npm install` auto-runs on first session via `hooks/ensure-deps.js`.
 - **Google Chrome** installed — the only browser required, since login, verification, and default capture all use it; other engines install on demand.
 - Node ≥ 20. No other runtime deps beyond dev-standard.
 
@@ -350,7 +350,7 @@ job (macOS), `sweep.js` runs `update-check.js --all` and persists
 | 2 | Before anything leaves local | The full draft doc |
 | 3 | Before external publish | Exact summary of writes to the external target |
 
-`/write-docs` and `/update-docs` also open with a **preflight worktree confirmation** (base branch + worktree name). It is a separate confirmation, not a fourth gate — declining it just means working in place.
+`/docs-write` and `/docs-update` also open with a **preflight worktree confirmation** (base branch + worktree name). It is a separate confirmation, not a fourth gate — declining it just means working in place.
 
 No gate may be auto-approved. Publishing never happens in the same breath as drafting.
 
@@ -360,7 +360,7 @@ No gate may be auto-approved. Publishing never happens in the same breath as dra
 
 1. **Validate the risky unknowns:** storageState longevity on the dev store; iframe screenshot fidelity. → `setup-auth.js` + a 2-shot hand-written manifest + `capture.js` happy path.
 2. First end-to-end run on a **small feature** (⌘K command palette — small surface, easy to verify) before AI Insights.
-3. Orchestrator SKILL.md + doc template + `/write-docs` command.
+3. Orchestrator SKILL.md + doc template + `/docs-write` command.
 4. `/docs-setup` full wizard (phases 2–3 can lag phase 1).
 5. Vendor skills + VERSIONS.md; wire into writing phase.
 6. Publish: local → google-docs → generic mcp, in that order.
@@ -387,7 +387,7 @@ scope: re-pin to current upstream (content no-op), verify the wiring — the
 vendored skills are unregistered reference files one directory too deep for
 skill discovery, so they *cannot* auto-trigger, and the writing phase reads
 four of them while `product-marketing` is wired through `/docs-setup` ("all
-five in /write-docs" was never the design) — and fix the followability gaps:
+five in /docs-write" was never the design) — and fix the followability gaps:
 `<plugin-root>`-qualified paths and an explicit read-and-follow mechanism in
 SKILL.md §4.
 
