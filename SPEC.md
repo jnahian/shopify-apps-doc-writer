@@ -19,7 +19,7 @@ A Claude Code plugin that writes merchant-facing feature documentation for embed
 
 ### Non-Goals (v1)
 - Screenshot annotation (arrows, highlight boxes, blur/redaction) → **shipped in 0.4.0 (§13)**.
-- `/shopify-apps-doc-writer:update-docs` re-publish *diffing* against a live external doc → **0.5 on the v2 roadmap (§13)**. (Staleness detection + re-shoot + in-place re-publish shipped.)
+- `/shopify-apps-doc-writer:update-docs` re-publish *diffing* against a live external doc → **shipped in 0.5.0 (§13)**.
 - Automated publishing without human confirmation → never.
 - Managing/seeding dev store demo data → manual checklist item only; deferred, uncommitted (§13).
 
@@ -406,6 +406,16 @@ Before gate 3 on a re-publish, fetch the live external doc and diff both
 directions: what the re-push changes, and any manual edits made directly in
 the external doc that a re-push would clobber. Google Docs is the committed
 target; generic MCP targets best-effort.
+
+Shipped in 0.5.0 (2026-08-18 — see
+`docs/superpowers/specs/2026-08-07-external-republish-diffing-design.md`, whose
+header predates the 0.4.0 release and still describes this item as landing
+first): snapshot-at-publish (`docs/<slug>/.published-snapshot.md`, the
+round-tripped read-back), exact snapshot-vs-live diff via
+`scripts/lib/republish-diff.js`, report-only at gate 3. "Diff both directions"
+resolved into two same-format diffs: manual-edit detection is the new piece;
+our-side changes were already reported by `update-check.js` and the worktree's
+git diff.
 
 ### 0.6 — Scheduled staleness sweeps — shipped in 0.4.0
 Fixed daily schedule (not release-triggered), macOS launchd, fully local:

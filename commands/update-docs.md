@@ -40,11 +40,30 @@ Otherwise, ask the user to confirm overwriting the committed screenshots with th
 - If they decline: `rm -rf <tmpDir>` and stop. Nothing changed.
 - If they approve: for each changed shot, copy `<tmpDir>/<file>` over `docs/$1/screenshots/<file>`, then `rm -rf <tmpDir>`.
 
-## 4. Re-publish (Gate 3 — external write)
+## 4. Check the live doc for manual edits (clobber check)
+
+Skip if the doc's config `publish.target` is `local`.
+
+- If `docs/$1/.published-snapshot.md` does not exist (last published before 0.5.0): tell the user the clobber check is unavailable this time — this re-publish writes the snapshot, so it works from the next one. Continue to gate 3 with that caveat.
+- Otherwise fetch the live doc's text with the connector's read tool — `google-docs`: Drive `read_file_content` on the file behind `meta.publish.url`; generic `mcp`: whatever read operation the connector's schema offers. If the fetch fails or the connector has no read tool, carry "could not check for manual edits: <reason>" into the gate 3 summary — never drop the check silently.
+- Save the fetched text to a scratch file and run:
+
+  ```bash
+  node <plugin-root>/scripts/lib/republish-diff.js docs/$1/.published-snapshot.md <scratch-file>
+  ```
+
+  JSON on stdout: `{ identical, hunks }`. It exits `0` whether or not hunks exist — hunks are data, not an error (a human `-`/`+` rendering goes to stderr).
+- `identical: true` → note at gate 3 that the live doc is untouched since last publish.
+- Hunks → these are manual edits a re-push reverts. Show them verbatim (the stderr rendering, or render `hunks` yourself: `- ` lines are what the live doc loses, `+ ` lines are what someone added). The user may proceed (clobber) or abort here and port the edits into `index.md` first, then re-run. Report-only — never block, never auto-approve.
+
+## 5. Re-publish (Gate 3 — external write)
 
 Only if the doc's config `publish.target` is not `local`. Before any external write, show the **exact** summary of what will change, e.g.:
 
 > Update existing Google Doc <url>: replace 2 images, body unchanged.
+> ⚠ 2 manual edits found in the live doc — shown above; publishing reverts them.
+
+The summary must always state the step 4 result: manual edits found (shown verbatim), none found, or the check was unavailable and why.
 
 Require an explicit yes. This gate is never auto-approved.
 
@@ -52,7 +71,7 @@ On yes, follow `references/publish-targets.md` for the target, reusing the recor
 - Update the doc **in place** where the target supports it (Google Docs does — replace body and/or the changed images).
 - If the target cannot update in place, create a new doc, rewrite `meta.publish.url` to the new link, and tell the user the link changed.
 
-## 5. Record the new publish state
+## 6. Record the new publish state
 
 Update `docs/$1/meta.json`:
 - `publish.publishedHash` = `shasum -a 256 docs/$1/index.md` (the hex digest only),
@@ -60,6 +79,8 @@ Update `docs/$1/meta.json`:
 - `publish.url` if it changed.
 
 `status` stays `published`.
+
+Also rewrite `docs/$1/.published-snapshot.md` with the text read back during publish verification (per `references/publish-targets.md`) — it is the baseline step 4 diffs against on the next run.
 
 ## Notes
 

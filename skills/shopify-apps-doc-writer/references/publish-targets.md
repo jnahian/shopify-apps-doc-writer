@@ -17,6 +17,8 @@ After any successful external publish, update `docs/<slug>/meta.json`:
 
 and set `status: "published"`. The `contentHash` / `publishedHash` pair is the v2 staleness hook.
 
+**Also save the publish-time snapshot.** Write the text you read back during publish verification to `docs/<slug>/.published-snapshot.md`, committed with the doc. It is the exact baseline `/shopify-apps-doc-writer:update-docs` diffs the live doc against before re-publishing, to detect manual edits a re-push would revert (the clobber check) — same fetch path on both sides, so conversion noise cancels out. The check is report-only: it never blocks a publish and never auto-approves gate 3, and every degraded mode is stated at the gate rather than skipped silently. Every successful external publish (first or re-) rewrites it. If nothing can be read back (an `mcp` connector with no read tool), skip it and tell the user the next re-publish will not be able to detect manual edits. `build-site.js` ignores the file — it reads only `index.md`.
+
 ---
 
 ## `local`
@@ -35,7 +37,7 @@ Drive's `create_file` converts `text/html` into a native Google Doc — real hea
 
 1. Convert `index.md` with `scripts/lib/md2html.js` (`mdToHtml(markdown, slug)`). **Do not hand-roll this conversion** — the module exists because of a trap: a screenshot between two numbered steps closes the `<ol>` and restarts numbering at "1." for every following step. `scripts/lib/md2html.test.js` guards it.
 2. `create_file` with `title`, `parentId` = `publish.parentFolderId`, `contentMimeType: "text/html"`, and the HTML in `textContent`.
-3. **Verify by reading the Doc back** (`read_file_content`) before reporting success. The create response reports `fileSize: 1` for Google-native docs regardless of content, so it proves nothing.
+3. **Verify by reading the Doc back** (`read_file_content`) before reporting success. The create response reports `fileSize: 1` for Google-native docs regardless of content, so it proves nothing. Save this read-back text as the snapshot (see above).
 4. Write the resulting Doc URL into `meta.json` as above.
 
 Known conversion losses: inline `` `code` `` flattens to plain text; screenshots are placeholders only. State both at gate 3.
@@ -62,6 +64,6 @@ For any other connected document destination (Notion, Confluence, ClickUp Docs, 
    > `[Screenshot: 02-sov-dashboard — see docs/<slug>/screenshots/]`
 
    and tell the user where the PNGs live. Degraded, never broken. Announce the fallback *at gate 3* when it's known in advance.
-4. Write the resulting URL/ID into `meta.json` as above.
+4. Write the resulting URL/ID into `meta.json` as above. If the connector has a read tool, read the published doc back and save the text as the snapshot (see above); if it has none, say so — the clobber check will be unavailable on re-publish.
 
 At gate 3, state exactly which connector, which parent location, how many pages/documents will be created, and whether images embed or fall back to placeholders.
